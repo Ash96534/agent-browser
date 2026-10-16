@@ -383,12 +383,12 @@ We expose these through a unified extraction API rather than just raw HTML acces
 | Phase | Status | Notes |
 |-------|--------|-------|
 | Phase 1 | ✅ Complete | Browser engine layer, core services |
-| Phase 2 | 🔄 In Progress | API controllers, WebSocket support |
-| Phase 3 | 📅 Future | Extended data extraction |
-| Phase 4 | 📅 Future | MCP server, agent integration |
+| Phase 2 | ✅ Complete | API controllers, WebSocket infrastructure, 10 REST endpoints |
+| Phase 3 | ✅ Complete | Extraction service, 5 extraction endpoints |
+| Phase 4 | 🔄 In Progress | MCP server, agent integration |
 | Phase 5 | 📅 Future | Production readiness |
 
 ---
 
-**Last Updated:** 2026-10-16  
-**Current Status:** Phase 1 Complete - Ready for API controller implementation
+**Last Updated:** 2026-10-17  
+**Current Status:** Phase 2/3 Complete - 15 REST endpoints + WebSocket infrastructure
