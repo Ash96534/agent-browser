@@ -1,5 +1,5 @@
-using AgentBrowser.Shared.Models.Requests;
 using AgentBrowser.Shared.Models;
+using AgentBrowser.Shared.Models.Requests;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 
@@ -21,14 +21,14 @@ public class BrowserTab : IBrowserTab
         _page = page;
     }
 
-    public async Task NavigateAsync(string url, NavigateOptions? options = null)
+    public async Task NavigateAsync(string url, AgentBrowser.Shared.Models.NavigateOptions? options = null)
     {
         try
         {
             var navigationOptions = new NavigationOptions
             {
                 Timeout = options?.Timeout ?? 30000,
-                WaitUntil = options?.WaitUntil ?? WaitUntil.Load
+                WaitUntil = options?.WaitUntil ?? AgentBrowser.Shared.Models.WaitUntil.Load
             };
             
             await _page.GoToAsync(url, navigationOptions);
@@ -51,7 +51,7 @@ public class BrowserTab : IBrowserTab
         return await _page.GetContentAsync();
     }
 
-    public async Task<byte[]> ScreenshotAsync(ScreenshotOptions? options = null)
+    public async Task<byte[]> ScreenshotAsync(AgentBrowser.Shared.Models.ScreenshotOptions? options = null)
     {
         var screenshotType = options?.Type ?? AgentBrowser.Shared.Models.ScreenshotType.Viewport;
         
@@ -66,7 +66,7 @@ public class BrowserTab : IBrowserTab
         };
     }
 
-    public async Task ClickAsync(string selector, ClickOptions? options = null)
+    public async Task ClickAsync(string selector, AgentBrowser.Shared.Models.ClickOptions? options = null)
     {
         try
         {
@@ -139,13 +139,13 @@ public class BrowserTab : IBrowserTab
         }
     }
 
-    public async Task WaitForSelectorAsync(string selector, WaitForOptions? options = null)
+    public async Task WaitForSelectorAsync(string selector, AgentBrowser.Shared.Models.WaitForOptions? options = null)
     {
         var timeout = options?.Timeout ?? 30000;
         await _page.WaitForSelectorAsync(selector, new WaitForSelectorOptions { Timeout = timeout });
     }
 
-    public async Task WaitForNavigationAsync(WaitUntil waitUntil = WaitUntil.Load)
+    public async Task WaitForNavigationAsync(AgentBrowser.Shared.Models.WaitUntil waitUntil = AgentBrowser.Shared.Models.WaitUntil.Load)
     {
         await _page.WaitForNavigationAsync(new WaitForNavigationOptions { WaitUntil = waitUntil });
     }
@@ -171,7 +171,7 @@ public class BrowserTab : IBrowserTab
         CloseAsync().GetAwaiter().GetResult();
     }
 
-    private ScreenshotType GetImageType(ScreenshotOptions? options)
+    private ScreenshotType GetImageType(AgentBrowser.Shared.Models.ScreenshotOptions? options)
     {
         return string.Equals(options?.Format, "jpeg", StringComparison.OrdinalIgnoreCase) 
             ? ScreenshotType.Jpeg 
