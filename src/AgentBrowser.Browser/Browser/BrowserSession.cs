@@ -1,6 +1,7 @@
 using AgentBrowser.Shared.Models;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
+using System.Collections.Concurrent;
 
 namespace AgentBrowser.Browser.Browser;
 

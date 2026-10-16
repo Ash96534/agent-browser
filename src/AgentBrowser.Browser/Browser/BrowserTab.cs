@@ -18,9 +18,6 @@ public class BrowserTab : IBrowserTab
     {
         Id = id;
         _page = page;
-        
-        _page.CloseAsync += (_, _) => Status = TabStatus.Loaded;
-        _page.ErrorAsync += (_, _) => Status = TabStatus.Error;
     }
 
     public async Task NavigateAsync(string url, NavigateOptions? options = null)
@@ -53,22 +50,22 @@ public class BrowserTab : IBrowserTab
         return await _page.GetContentAsync();
     }
 
-    public async Task<byte[]> ScreenshotAsync(ScreenshotOptions? options = null)
+    public async Task<byte[]> ScreenshotAsync(AgentBrowser.Shared.Models.Requests.ScreenshotOptions? options = null)
     {
-        var screenshotType = options?.Type ?? ScreenshotType.Viewport;
+        var screenshotType = options?.Type ?? AgentBrowser.Shared.Models.Requests.ScreenshotType.Viewport;
         
         return screenshotType switch
         {
-            ScreenshotType.Element when !string.IsNullOrEmpty(options?.Selector) => 
+            AgentBrowser.Shared.Models.Requests.ScreenshotType.Element when !string.IsNullOrEmpty(options?.Selector) => 
                 await _page.ScreenshotElementAsync(options.Selector, new ScreenshotOptions { Type = GetImageType(options) }),
-            ScreenshotType.FullPage => 
+            AgentBrowser.Shared.Models.Requests.ScreenshotType.FullPage => 
                 await _page.ScreenshotAsync(new ScreenshotOptions { FullPage = true, Type = GetImageType(options) }),
             _ => 
                 await _page.ScreenshotAsync(new ScreenshotOptions { Type = GetImageType(options) })
         };
     }
 
-    public async Task ClickAsync(string selector, ClickOptions? options = null)
+    public async Task ClickAsync(string selector, AgentBrowser.Shared.Models.Requests.ClickOptions? options = null)
     {
         try
         {
@@ -141,7 +138,7 @@ public class BrowserTab : IBrowserTab
         }
     }
 
-    public async Task WaitForSelectorAsync(string selector, WaitForOptions? options = null)
+    public async Task WaitForSelectorAsync(string selector, AgentBrowser.Shared.Models.Common.WaitForOptions? options = null)
     {
         var timeout = options?.Timeout ?? 30000;
         await _page.WaitForSelectorAsync(selector, new WaitForSelectorOptions { Timeout = timeout });
@@ -173,7 +170,7 @@ public class BrowserTab : IBrowserTab
         CloseAsync().GetAwaiter().GetResult();
     }
 
-    private ScreenshotType GetImageType(ScreenshotOptions? options)
+    private ScreenshotType GetImageType(AgentBrowser.Shared.Models.Requests.ScreenshotOptions? options)
     {
         return string.Equals(options?.Format, "jpeg", StringComparison.OrdinalIgnoreCase) 
             ? ScreenshotType.Jpeg 
