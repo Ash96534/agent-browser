@@ -23,32 +23,45 @@
 
 ---
 
-## Phase 2: Core Agent Features 🔄 IN PROGRESS
+## Phase 2: Core Agent Features ✅ IN PROGRESS (PARTIALLY COMPLETE)
+
+### Completed
+- [x] WebSocket handler for connection management
+- [x] WebSocket event types (Console, Network, DOM, LoadComplete, Error)
+- [x] WebSocket middleware integration
+- [x] Event streaming infrastructure ready
 
 ### In Progress
-- [ ] WebSocket real-time communication
-- [ ] Console log streaming
-- [ ] Network request capture
+- [ ] Console log streaming (Puppeteer console event hook)
+- [ ] Network request capture (request interception)
 - [ ] JavaScript execution
 - [ ] Click/type/select operations
 - [ ] Wait states
 
 ### Next Up
-- [ ] Create API controllers (SessionController, NavigationController, etc.)
-- [ ] Implement WebSocket handlers
 - [ ] Add middleware (exception handling, logging, session validation)
 - [ ] Write unit tests
 - [ ] Write integration tests
 
 ---
 
-## Phase 3: Extended Data Extraction 📅 FUTURE
+## Phase 3: Extended Data Extraction ✅ COMPLETED
 
-- [ ] Metadata extraction (OG, Twitter, JSON-LD)
-- [ ] Price/data attribute scanning
-- [ ] Image context extraction
-- [ ] Structured data extraction with schemas
-- [ ] Form detection and mapping
+### Completed
+- [x] Extraction service created
+- [x] Metadata extraction (OG tags, JSON-LD, meta tags)
+- [x] Price extraction (data-price, Schema.org)
+- [x] Image extraction (alt, aria-label, context)
+- [x] Form extraction (fields, labels, validation)
+- [x] Link extraction (href, rel, target)
+- [x] Extraction REST controller with 5 endpoints
+
+**Endpoints:**
+- `GET /session/{id}/extract/metadata`
+- `GET /session/{id}/extract/prices`
+- `GET /session/{id}/extract/images`
+- `GET /session/{id}/extract/forms`
+- `GET /session/{id}/extract/links`
 
 ---
 
@@ -75,8 +88,8 @@
 
 ## Current Status
 
-**Phase:** Phase 1 Complete → Phase 2 In Progress  
-**Status:** Browser engine layer is fully implemented and compiled successfully
+**Phase:** Phase 2/3 In Progress → API Complete, WebSocket Ready, Extraction Live  
+**Status:** Full API with 10+ endpoints, WebSocket infrastructure, Extraction service
 
 ### What's Working
 - ✅ Solution builds without errors
@@ -84,10 +97,19 @@
 - ✅ Navigation and screenshot operations available
 - ✅ Core services registered via DI
 - ✅ Domain models properly structured
+- ✅ 10 REST API endpoints:
+  - Session (POST, GET, DELETE, GET all)
+  - Navigation (POST navigate, GET html, GET content)
+  - DOM (POST click, POST type, POST execute, GET wait)
+  - Screenshot (GET screenshot, GET base64)
+  - Extraction (5 endpoints for metadata, prices, images, forms, links)
+- ✅ WebSocket handlers ready
+- ✅ WebSocket event types defined
 
 ### What's Next
-- 🔄 API controllers and REST endpoints
-- 🔄 WebSocket support for real-time events
+- 🔄 Console log streaming
+- 🔄 Network request capture
+- 🔄 Unit and integration tests
 
 ---
 
@@ -97,9 +119,12 @@
 |-----------|------|--------|
 | Project Setup | 2026-10-16 | ✅ Complete |
 | Browser Engine Layer | 2026-10-16 | ✅ Complete |
-| API Controllers | 2026-10-17 | 🔄 In Progress |
-| WebSocket Support | 2026-10-18 | 📅 Scheduled |
-| Extended Extraction | 2026-10-20 | 📅 Planned |
+| REST API Controllers | 2026-10-17 | ✅ Complete (10 endpoints) |
+| WebSocket Support | 2026-10-17 | ✅ Complete (infrastructure) |
+| Extraction Service | 2026-10-17 | ✅ Complete (5 endpoints) |
+| Console Streaming | 2026-10-18 | 🔄 In Progress |
+| Network Capture | 2026-10-18 | 🔄 In Progress |
+| Unit Tests | 2026-10-19 | 📅 Scheduled |
 | MCP Server | 2026-10-22 | 📅 Planned |
 | Production Ready | 2026-10-25 | 📅 Planned |
 
@@ -109,4 +134,4 @@
 
 **Repository:** [https://github.com/Ash96534/agent-browser](https://github.com/Ash96534/agent-browser)
 
-**Current Commit:** 2659bfd (feat: Add browser engine layer with IBrowserManager and service implementations)
+**Current Commit:** ea159a0 (docs: Update IMPLEMENTATION.md with Phase 2 & extraction progress)
