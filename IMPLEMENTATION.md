@@ -245,27 +245,83 @@ Api/
 ```
 Api/
 ├── Middleware/
+│   ├── WebSocketMiddleware.cs ✅
 │   ├── ExceptionHandlingMiddleware.cs
 │   ├── RequestLoggingMiddleware.cs
 │   └── SessionValidationMiddleware.cs
 ```
 
+- [x] `WebSocketMiddleware.cs` - WebSocket connection handling
 - [ ] `ExceptionHandlingMiddleware.cs`
 - [ ] `RequestLoggingMiddleware.cs`
 - [ ] `SessionValidationMiddleware.cs`
 
-#### 1.5.4 WebSocket Support
+#### 1.5.4 WebSocket Support ✅ COMPLETED
 ```
 Api/
 ├── WebSockets/
-│   ├── WebSocketHandler.cs
-│   ├── WebSocketManager.cs
-│   └── WebSocketMessage.cs
+│   ├── WebSocketHandler.cs ✅
+│   ├── Events.cs ✅
+│   └── WebSocketMiddleware.cs ✅
 ```
 
-- [ ] `WebSocketHandler.cs`
-- [ ] `WebSocketManager.cs`
-- [ ] `WebSocketMessage.cs`
+- [x] `WebSocketHandler.cs` - Connection management
+- [x] `Events.cs` - Event types (Console, Network, DOM, LoadComplete, Error)
+- [x] `WebSocketMiddleware.cs` - Middleware integration
+- [x] Event streaming infrastructure ready
+
+---
+
+### 1.7 Extraction Layer (`AgentBrowser.Core.Extraction`) ✅ COMPLETED
+
+#### 1.7.1 Extraction Service ✅ COMPLETED
+```
+Core/
+├── Extraction/
+│   ├── ExtractionService.cs ✅
+│   └── IExtractionService.cs (optional interface)
+```
+
+**Implemented:**
+- [x] `ExtractionService.cs` - Core extraction logic
+- [x] Metadata extraction (OG tags, JSON-LD, meta tags)
+- [x] Price extraction (data-price, Schema.org)
+- [x] Image extraction (alt, aria-label, context)
+- [x] Form extraction (fields, labels, validation)
+- [x] Link extraction (href, rel, target)
+
+**Service Methods:**
+- `ExtractMetadataAsync` - Extract hidden metadata
+- `ExtractPricesAsync` - Extract prices from page
+- `ExtractImagesAsync` - Extract images with context
+- `ExtractFormsAsync` - Extract forms from page
+- `ExtractLinksAsync` - Extract links from page
+
+#### 1.7.2 Extraction Controller ✅ COMPLETED
+```
+Api/
+├── Controllers/
+│   └── ExtractionController.cs ✅
+```
+
+**Implemented:**
+- [x] `ExtractionController.cs` - REST endpoints for extraction
+
+**Endpoints:**
+- `GET /session/{id}/extract/metadata`
+- `GET /session/{id}/extract/prices`
+- `GET /session/{id}/extract/images`
+- `GET /session/{id}/extract/forms`
+- `GET /session/{id}/extract/links`
+
+#### 1.7.3 Service Registration ✅ COMPLETED
+```
+Core/
+├── Extensions/
+│   └── ServiceCollectionExtensions.cs ✅
+```
+
+- [x] `ExtractionService` registered in DI container
 
 ---
 
@@ -311,19 +367,19 @@ tests/AgentBrowser.Tests.Integration/
 
 ---
 
-## Phase 2: Core Agent Features (Next)
+## Phase 2: Core Agent Features (IN PROGRESS)
 
-### 2.1 WebSocket Real-time Communication
+### 2.1 WebSocket Real-time Communication ✅ COMPLETED
 
-#### 2.1.1 WebSocket Infrastructure
-- [ ] Implement `WebSocketHandler` for real-time event streaming
-- [ ] Add WebSocket endpoint `/ws/session/{id}`
-- [ ] Implement connection management
+#### 2.1.1 WebSocket Infrastructure ✅ COMPLETED
+- [x] Implement `WebSocketHandler` for real-time event streaming
+- [x] Add WebSocket endpoint `/ws/session/{id}`
+- [x] Implement connection management
   - Track active connections per session
   - Handle reconnection
   - Implement ping/pong heartbeat
 
-#### 2.1.2 Event Streaming
+#### 2.1.2 Event Streaming ✅ COMPLETED
 ```
 Browser/
 ├── Events/
@@ -334,8 +390,8 @@ Browser/
 │   └── IEventBroadcaster.cs
 ```
 
-- [ ] `BrowserEvent.cs`
-- [ ] `IEventBroadcaster.cs`
+- [x] `BrowserEvent.cs`
+- [x] `IEventBroadcaster.cs`
 
 #### 2.1.3 Console Log Streaming
 - [ ] Hook into Puppeteer console event
@@ -638,12 +694,21 @@ sdk/python/
 - [x] All tests passing
 - [x] Docker container builds and runs
 
-### Phase 2 Completion
-- [ ] WebSocket streaming working
+### Phase 2 Progress 🔄
+- [x] WebSocket infrastructure ready
+- [x] WebSocket event types defined
+- [x] Service registration complete
+- [ ] WebSocket streaming fully working
 - [ ] Console logs captured
 - [ ] Network requests captured
 - [ ] JavaScript execution working
 - [ ] All DOM operations functional
+
+### Phase 3 Progress 🔄
+- [x] Extraction service created
+- [x] Extraction controller created
+- [x] All extraction endpoints implemented
+- [ ] Extraction endpoints fully tested
 
 ### Phase 3 Completion
 - [ ] Metadata extraction working
