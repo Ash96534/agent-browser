@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AgentBrowser.Core\AgentBrowser.Core.csproj" />
+    <ProjectReference Include="..\AgentBrowser.Browser\AgentBrowser.Browser.csproj" />
+    <ProjectReference Include="..\AgentBrowser.MCP\AgentBrowser.MCP.csproj" />
+    <ProjectReference Include="..\AgentBrowser.Shared\AgentBrowser.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
