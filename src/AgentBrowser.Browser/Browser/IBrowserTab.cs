@@ -1,4 +1,6 @@
 using AgentBrowser.Shared.Models.Requests;
+using AgentBrowser.Shared.Models.Common;
+using PuppeteerSharp;
 
 namespace AgentBrowser.Browser.Browser;
 
@@ -9,11 +11,11 @@ public interface IBrowserTab : IDisposable
     string? Title { get; }
     TabStatus Status { get; }
     
-    Task NavigateAsync(string url, NavigateOptions? options = null);
+    Task NavigateAsync(string url, NavigationOptions? options = null);
     Task<string> GetHtmlAsync();
     Task<string> GetContentAsync();
-    Task<byte[]> ScreenshotAsync(ScreenshotOptions? options = null);
-    Task ClickAsync(string selector, ClickOptions? options = null);
+    Task<byte[]> ScreenshotAsync(AgentBrowser.Shared.Models.Requests.ScreenshotOptions? options = null);
+    Task ClickAsync(string selector, AgentBrowser.Shared.Models.Requests.ClickOptions? options = null);
     Task TypeAsync(string selector, string text, int delay = 0);
     Task<ElementHandle?> QuerySelectorAsync(string selector);
     Task<IElementHandle[]> QuerySelectorAllAsync(string selector);
