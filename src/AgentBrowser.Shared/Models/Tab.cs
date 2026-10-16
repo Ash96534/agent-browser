@@ -8,10 +8,3 @@ public class Tab
     public TabStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
 }
-
-public enum TabStatus
-{
-    Loading,
-    Loaded,
-    Error
-}
