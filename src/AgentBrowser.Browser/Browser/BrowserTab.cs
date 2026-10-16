@@ -171,10 +171,10 @@ public class BrowserTab : IBrowserTab
         CloseAsync().GetAwaiter().GetResult();
     }
 
-    private ScreenshotType GetImageType(AgentBrowser.Shared.Models.ScreenshotOptions? options)
+    private PuppeteerSharp.ScreenshotType GetImageType(AgentBrowser.Shared.Models.ScreenshotOptions? options)
     {
         return string.Equals(options?.Format, "jpeg", StringComparison.OrdinalIgnoreCase) 
-            ? ScreenshotType.Jpeg 
-            : ScreenshotType.Png;
+            ? PuppeteerSharp.ScreenshotType.Jpeg 
+            : PuppeteerSharp.ScreenshotType.Png;
     }
 }
