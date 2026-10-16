@@ -1,4 +1,5 @@
 using AgentBrowser.Browser.Browser;
+using AgentBrowser.Core.Extraction;
 using AgentBrowser.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INavigationService, NavigationService>();
         services.AddScoped<IDomService, DomService>();
         services.AddScoped<IScreenshotService, ScreenshotService>();
+        services.AddScoped<ExtractionService>();
         
         if (configureBrowser != null)
         {
