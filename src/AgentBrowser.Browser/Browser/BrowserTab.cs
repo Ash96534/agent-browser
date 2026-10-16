@@ -12,7 +12,7 @@ public class BrowserTab : IBrowserTab
     public string Id { get; }
     public string? Url => _page.Url;
     public string? Title => _page.Title;
-    public TabStatus Status { get; private set; } = TabStatus.Loaded;
+    public AgentBrowser.Shared.Models.TabStatus Status { get; private set; } = AgentBrowser.Shared.Models.TabStatus.Loaded;
 
     public BrowserTab(string id, IPage page)
     {
@@ -20,7 +20,7 @@ public class BrowserTab : IBrowserTab
         _page = page;
     }
 
-    public async Task NavigateAsync(string url, NavigateOptions? options = null)
+    public async Task NavigateAsync(string url, AgentBrowser.Shared.Models.NavigateOptions? options = null)
     {
         try
         {
@@ -31,11 +31,11 @@ public class BrowserTab : IBrowserTab
             };
             
             await _page.GoToAsync(url, navigationOptions);
-            Status = TabStatus.Loaded;
+            Status = AgentBrowser.Shared.Models.TabStatus.Loaded;
         }
         catch (Exception ex)
         {
-            Status = TabStatus.Error;
+            Status = AgentBrowser.Shared.Models.TabStatus.Error;
             throw new NavigationException($"Failed to navigate to {url}", ex);
         }
     }
@@ -50,22 +50,22 @@ public class BrowserTab : IBrowserTab
         return await _page.GetContentAsync();
     }
 
-    public async Task<byte[]> ScreenshotAsync(AgentBrowser.Shared.Models.Requests.ScreenshotOptions? options = null)
+    public async Task<byte[]> ScreenshotAsync(AgentBrowser.Shared.Models.ScreenshotOptions? options = null)
     {
-        var screenshotType = options?.Type ?? AgentBrowser.Shared.Models.Requests.ScreenshotType.Viewport;
+        var screenshotType = options?.Type ?? AgentBrowser.Shared.Models.ScreenshotType.Viewport;
         
         return screenshotType switch
         {
-            AgentBrowser.Shared.Models.Requests.ScreenshotType.Element when !string.IsNullOrEmpty(options?.Selector) => 
+            AgentBrowser.Shared.Models.ScreenshotType.Element when !string.IsNullOrEmpty(options?.Selector) => 
                 await _page.ScreenshotElementAsync(options.Selector, new ScreenshotOptions { Type = GetImageType(options) }),
-            AgentBrowser.Shared.Models.Requests.ScreenshotType.FullPage => 
+            AgentBrowser.Shared.Models.ScreenshotType.FullPage => 
                 await _page.ScreenshotAsync(new ScreenshotOptions { FullPage = true, Type = GetImageType(options) }),
             _ => 
                 await _page.ScreenshotAsync(new ScreenshotOptions { Type = GetImageType(options) })
         };
     }
 
-    public async Task ClickAsync(string selector, AgentBrowser.Shared.Models.Requests.ClickOptions? options = null)
+    public async Task ClickAsync(string selector, AgentBrowser.Shared.Models.ClickOptions? options = null)
     {
         try
         {
@@ -138,7 +138,7 @@ public class BrowserTab : IBrowserTab
         }
     }
 
-    public async Task WaitForSelectorAsync(string selector, AgentBrowser.Shared.Models.Common.WaitForOptions? options = null)
+    public async Task WaitForSelectorAsync(string selector, AgentBrowser.Shared.Models.WaitForOptions? options = null)
     {
         var timeout = options?.Timeout ?? 30000;
         await _page.WaitForSelectorAsync(selector, new WaitForSelectorOptions { Timeout = timeout });
@@ -170,7 +170,7 @@ public class BrowserTab : IBrowserTab
         CloseAsync().GetAwaiter().GetResult();
     }
 
-    private ScreenshotType GetImageType(AgentBrowser.Shared.Models.Requests.ScreenshotOptions? options)
+    private ScreenshotType GetImageType(AgentBrowser.Shared.Models.ScreenshotOptions? options)
     {
         return string.Equals(options?.Format, "jpeg", StringComparison.OrdinalIgnoreCase) 
             ? ScreenshotType.Jpeg 
