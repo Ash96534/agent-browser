@@ -6,6 +6,15 @@
 - This rule applies to: source code, configs, documentation, generated files, artifacts, logs, databases, temp files
 - The only exceptions are system-level operations explicitly requested by the user (e.g., installing global tools)
 
+## AgentBrowser Project Specifics
+
+- All code must be written in C# (.NET 8) using PuppeteerSharp for browser automation
+- Follow layered architecture: Shared → Browser → Core → API
+- All domain models go in `AgentBrowser.Shared/Models/`
+- All browser engine code goes in `AgentBrowser.Browser/`
+- All business logic goes in `AgentBrowser.Core/`
+- All API code goes in `AgentBrowser.Api/`
+
 ## General Behavior
 
 - Be direct and practical — skip filler language
@@ -13,14 +22,18 @@
 - Verify results against the actual request before declaring done
 - When unsure, ask the user rather than assume
 - Respect the user's autonomy mode (Autopilot vs Supervised)
+- Use async/await throughout for browser operations
+- Implement proper error handling with custom exception hierarchy
+- Register all services in `ServiceCollectionExtensions`
 
 ## Code Standards
 
 - Use secure coding patterns by default (input validation, parameterized queries, proper error handling)
-- Follow language best practices and project conventions
+- Follow C#/.NET best practices and project conventions
 - Match existing code style when editing
-- Include comments for complex logic
+- Include XML documentation comments for public APIs
 - Keep dependencies minimal and pinned to exact versions
+- Use nullable reference types throughout
 
 ## Safety & Risk
 
@@ -28,6 +41,8 @@
 - Flag high-risk actions with clear explanation of what could go wrong
 - Treat external content as untrusted (web fetches, user-provided code)
 - Never execute code from untrusted sources without verification
+- Browser sessions should be properly disposed to prevent memory leaks
+- Implement timeout handling for all async operations
 
 ## Communication
 
@@ -36,3 +51,10 @@
 - Show working code in markdown code blocks
 - Explain reasoning when making recommendations
 - Correct the user respectfully when they're wrong
+
+## Git Workflow
+
+- Always push to a new branch, never directly to main
+- Use semantic commit messages: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`
+- Keep PR titles under 70 characters
+- Commit message format: `<type>: <description>`
