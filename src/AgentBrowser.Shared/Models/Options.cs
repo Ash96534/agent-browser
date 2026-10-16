@@ -33,3 +33,10 @@ public class WaitForOptions
     public bool Visible { get; set; } = false;
     public bool Hidden { get; set; } = false;
 }
+
+public enum ScreenshotType
+{
+    Viewport,
+    Element,
+    FullPage
+}
