@@ -1,4 +1,5 @@
 using AgentBrowser.Shared.Models.Requests;
+using AgentBrowser.Shared.Models;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 
@@ -20,7 +21,7 @@ public class BrowserTab : IBrowserTab
         _page = page;
     }
 
-    public async Task NavigateAsync(string url, AgentBrowser.Shared.Models.NavigateOptions? options = null)
+    public async Task NavigateAsync(string url, NavigateOptions? options = null)
     {
         try
         {
@@ -50,7 +51,7 @@ public class BrowserTab : IBrowserTab
         return await _page.GetContentAsync();
     }
 
-    public async Task<byte[]> ScreenshotAsync(AgentBrowser.Shared.Models.ScreenshotOptions? options = null)
+    public async Task<byte[]> ScreenshotAsync(ScreenshotOptions? options = null)
     {
         var screenshotType = options?.Type ?? AgentBrowser.Shared.Models.ScreenshotType.Viewport;
         
@@ -65,7 +66,7 @@ public class BrowserTab : IBrowserTab
         };
     }
 
-    public async Task ClickAsync(string selector, AgentBrowser.Shared.Models.ClickOptions? options = null)
+    public async Task ClickAsync(string selector, ClickOptions? options = null)
     {
         try
         {
@@ -138,7 +139,7 @@ public class BrowserTab : IBrowserTab
         }
     }
 
-    public async Task WaitForSelectorAsync(string selector, AgentBrowser.Shared.Models.WaitForOptions? options = null)
+    public async Task WaitForSelectorAsync(string selector, WaitForOptions? options = null)
     {
         var timeout = options?.Timeout ?? 30000;
         await _page.WaitForSelectorAsync(selector, new WaitForSelectorOptions { Timeout = timeout });
@@ -170,7 +171,7 @@ public class BrowserTab : IBrowserTab
         CloseAsync().GetAwaiter().GetResult();
     }
 
-    private ScreenshotType GetImageType(AgentBrowser.Shared.Models.ScreenshotOptions? options)
+    private ScreenshotType GetImageType(ScreenshotOptions? options)
     {
         return string.Equals(options?.Format, "jpeg", StringComparison.OrdinalIgnoreCase) 
             ? ScreenshotType.Jpeg 
