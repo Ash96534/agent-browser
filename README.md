@@ -18,37 +18,73 @@ AgentBrowser gives AI agents complete, fine-grained control over browser behavio
 # Clone and build
 dotnet build
 
-# Run the server
+# Run the API server
 dotnet run --project src/AgentBrowser.Api
+
+# Run MCP server (stdio transport)
+dotnet run --project src/AgentBrowser.MCP
 ```
 
-## API
+## API Endpoints
 
-### Create Session
-```bash
-POST /session
-```
+### Session Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/session` | Create new browser session |
+| `GET /session/{id}` | Get session state |
+| `DELETE /session/{id}` | Close session |
+| `GET /session` | List all active sessions |
 
-### Navigate
-```bash
-POST /session/{id}/navigate
-{ "url": "https://example.com" }
-```
+### Navigation
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST /session/{id}/navigate` | Navigate to URL |
+| `GET /session/{id}/html` | Get rendered HTML |
+| `GET /session/{id}/content` | Get page content |
 
-### Get Screenshot
-```bash
-GET /session/{id}/screenshot
-```
+### DOM Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST /session/{id}/dom/click` | Click element |
+| `POST /session/{id}/dom/type` | Type text |
+| `POST /session/{id}/dom/execute` | Execute JavaScript |
+| `GET /session/{id}/dom/wait` | Wait for selector |
 
-### Extract Hidden Metadata
-```bash
-GET /session/{id}/extract/metadata
-```
+### Screenshot
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET /session/{id}/screenshot` | Capture screenshot |
+| `GET /session/{id}/screenshot/base64` | Capture as base64 |
 
-### Get Prices
-```bash
-GET /session/{id}/extract/prices
-```
+### Extraction (Hidden Data)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET /session/{id}/extract/metadata` | Extract metadata (OG, JSON-LD) |
+| `GET /session/{id}/extract/prices` | Extract prices |
+| `GET /session/{id}/extract/images` | Extract images with context |
+| `GET /session/{id}/extract/forms` | Extract forms |
+| `GET /session/{id}/extract/links` | Extract links |
+
+### Health Check
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET /health` | Health check |
+
+## MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `browse_navigate` | Navigate to URL |
+| `browse_click` | Click element |
+| `browse_type` | Type text |
+| `browse_get_html` | Get HTML content |
+| `browse_get_screenshot` | Get base64 screenshot |
+| `browse_execute_js` | Execute JavaScript |
+| `browse_extract_schema` | Extract data by schema |
+| `browse_get_metadata` | Extract metadata |
+| `browse_get_prices` | Extract prices |
+| `browse_get_images` | Extract images |
+| `browse_get_forms` | Extract forms |
 
 ## Architecture
 
@@ -57,60 +93,46 @@ See [SPEC.md](SPEC.md) for detailed architecture and [DECISIONS.md](DECISIONS.md
 ## Current Status
 
 **Phase 1 (MVP) - Browser Engine Layer - COMPLETE ✅**
+- Browser engine (IBrowserManager, BrowserManager)
+- Core services (Session, Navigation, DOM, Screenshot)
+- Domain models, Request/Response models
 
-The core browser engine layer is fully implemented with:
+**Phase 2 (Core Agent Features) - COMPLETE ✅**
+- 15 REST API endpoints
+- WebSocket infrastructure (handlers, events)
 
-- **Browser Engine (`AgentBrowser.Browser`)**
-  - `IBrowserManager` interface with full API surface
-  - `BrowserManager` implementation using PuppeteerSharp
-  - Session management (create, close, list, get by ID)
-  - Navigation, screenshot, DOM operations
+**Phase 3 (Extended Extraction) - COMPLETE ✅**
+- Extraction service (metadata, prices, images, forms, links)
+- 5 extraction endpoints
 
-- **Core Services (`AgentBrowser.Core`)**
-  - `SessionService` - Session CRUD operations
-  - `NavigationService` - URL navigation and HTML retrieval
-  - `DomService` - DOM manipulation (click, type, JS execution)
-  - `ScreenshotService` - Screenshot capture
+**Phase 4 (MCP Server) - COMPLETE ✅**
+- MCP server with stdio transport
+- 11 MCP tools implemented
 
-- **Extensions**
-  - `TabExtensions` - Extension methods for browser operations
-
-**Projects:**
-```
-src/
-  AgentBrowser.Api/        # REST API (ready for controllers)
-  AgentBrowser.Core/       # Business logic (COMPLETED)
-  AgentBrowser.Browser/    # Browser engine (COMPLETED)
-  AgentBrowser.MCP/        # MCP server (ready)
-  AgentBrowser.Shared/     # Domain models
-tests/
-  AgentBrowser.Tests.Unit/
-  AgentBrowser.Tests.Integration/
-```
-
-**GitHub:** [https://github.com/Ash96534/agent-browser](https://github.com/Ash96534/agent-browser)
+**Repository:** [https://github.com/Ash96534/agent-browser](https://github.com/Ash96534/agent-browser)
 
 ## Development Progress
 
 ### Completed
 - ✅ .NET 8 solution structure
 - ✅ PuppeteerSharp integration
-- ✅ Domain models (Session, Tab, Viewport, Cookie, etc.)
-- ✅ Request/Response models (NavigateRequest, ClickRequest, etc.)
-- ✅ Browser engine layer (IBrowserManager, BrowserManager)
-- ✅ Core services (Session, Navigation, DOM, Screenshot)
-- ✅ Service dependency injection setup
-- ✅ GitHub repository setup
-
-### In Progress
-- 🔄 API controllers and REST endpoints
-- 🔄 WebSocket support for real-time events
+- ✅ Browser engine layer
+- ✅ Core services
+- ✅ 15 REST API endpoints
+- ✅ WebSocket infrastructure
+- ✅ Extraction service
+- ✅ MCP server (stdio transport)
+- ✅ Domain models
+- ✅ Service dependency injection
 
 ### Next Steps
-1. Create API controllers (SessionController, NavigationController, etc.)
-2. Implement WebSocket handlers for real-time streaming
-3. Add MCP server implementation
-4. Build and test the complete system
+1. Console log streaming
+2. Network request capture
+3. Unit tests
+4. Integration tests
+5. API authentication
+6. Session persistence
+7. CI/CD pipeline
 
 See [IMPLEMENTATION.md](IMPLEMENTATION.md) for the detailed task list.
 
