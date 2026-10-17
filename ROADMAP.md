@@ -23,25 +23,21 @@
 
 ---
 
-## Phase 2: Core Agent Features ✅ IN PROGRESS (PARTIALLY COMPLETE)
+## Phase 2: Core Agent Features ✅ COMPLETED
 
 ### Completed
 - [x] WebSocket handler for connection management
 - [x] WebSocket event types (Console, Network, DOM, LoadComplete, Error)
 - [x] WebSocket middleware integration
 - [x] Event streaming infrastructure ready
+- [x] REST API controllers (Session, Navigation, DOM, Screenshot, Health, Extraction)
 
-### In Progress
-- [ ] Console log streaming (Puppeteer console event hook)
-- [ ] Network request capture (request interception)
-- [ ] JavaScript execution
-- [ ] Click/type/select operations
-- [ ] Wait states
-
-### Next Up
-- [ ] Add middleware (exception handling, logging, session validation)
-- [ ] Write unit tests
-- [ ] Write integration tests
+**Endpoints Added:**
+- Session: `POST`, `GET {id}`, `DELETE {id}`, `GET` (all)
+- Navigation: `POST navigate`, `GET html`, `GET content`
+- DOM: `POST click`, `POST type`, `POST execute`, `GET wait`
+- Screenshot: `GET screenshot`, `GET base64`
+- Extraction: 5 endpoints (metadata, prices, images, forms, links)
 
 ---
 
@@ -65,12 +61,21 @@
 
 ---
 
-## Phase 4: Agent Integration 📅 FUTURE
+## Phase 4: Agent Integration � IN PROGRESS
 
-- [ ] MCP server implementation
+### In Progress
+- [ ] MCP server implementation (stdio transport)
 - [ ] Agent SDK libraries
 - [ ] Authentication flows
 - [ ] Session persistence
+
+### Next Up
+- [ ] Implement MCP server protocol handler
+- [ ] Create MCP tools (browse_navigate, browse_click, browse_type, etc.)
+- [ ] Implement MCP stdio transport
+- [ ] Create Agent SDK (Python/Node.js)
+- [ ] Add API authentication (API key)
+- [ ] Implement session persistence with SQLite
 
 ---
 
@@ -83,13 +88,15 @@
 - [ ] CI/CD pipeline
 - [ ] Docker support
 - [ ] Monitoring and logging
+- [ ] Console log streaming (Puppeteer console event)
+- [ ] Network request capture (request interception)
 
 ---
 
 ## Current Status
 
-**Phase:** Phase 2/3 In Progress → API Complete, WebSocket Ready, Extraction Live  
-**Status:** Full API with 10+ endpoints, WebSocket infrastructure, Extraction service
+**Phase:** Phase 4 In Progress → MCP Server & Agent SDK Next  
+**Status:** Full API with 15+ endpoints, WebSocket infrastructure, Extraction service
 
 ### What's Working
 - ✅ Solution builds without errors
@@ -97,19 +104,19 @@
 - ✅ Navigation and screenshot operations available
 - ✅ Core services registered via DI
 - ✅ Domain models properly structured
-- ✅ 10 REST API endpoints:
-  - Session (POST, GET, DELETE, GET all)
-  - Navigation (POST navigate, GET html, GET content)
-  - DOM (POST click, POST type, POST execute, GET wait)
-  - Screenshot (GET screenshot, GET base64)
-  - Extraction (5 endpoints for metadata, prices, images, forms, links)
+- ✅ 15 REST API endpoints:
+  - Session (4 endpoints)
+  - Navigation (3 endpoints)
+  - DOM (4 endpoints)
+  - Screenshot (2 endpoints)
+  - Extraction (5 endpoints)
 - ✅ WebSocket handlers ready
 - ✅ WebSocket event types defined
 
 ### What's Next
-- 🔄 Console log streaming
-- 🔄 Network request capture
-- 🔄 Unit and integration tests
+- 🔄 MCP server implementation
+- 🔄 Agent SDK libraries
+- 🔄 API authentication
 
 ---
 
@@ -119,13 +126,13 @@
 |-----------|------|--------|
 | Project Setup | 2026-10-16 | ✅ Complete |
 | Browser Engine Layer | 2026-10-16 | ✅ Complete |
-| REST API Controllers | 2026-10-17 | ✅ Complete (10 endpoints) |
+| REST API Controllers | 2026-10-17 | ✅ Complete (15 endpoints) |
 | WebSocket Support | 2026-10-17 | ✅ Complete (infrastructure) |
 | Extraction Service | 2026-10-17 | ✅ Complete (5 endpoints) |
-| Console Streaming | 2026-10-18 | 🔄 In Progress |
-| Network Capture | 2026-10-18 | 🔄 In Progress |
-| Unit Tests | 2026-10-19 | 📅 Scheduled |
-| MCP Server | 2026-10-22 | 📅 Planned |
+| MCP Server | 2026-10-18 | 🔄 In Progress |
+| Agent SDK | 2026-10-19 | � Scheduled |
+| Authentication | 2026-10-20 | 📅 Planned |
+| CI/CD Pipeline | 2026-10-22 | 📅 Planned |
 | Production Ready | 2026-10-25 | 📅 Planned |
 
 ---
@@ -134,4 +141,4 @@
 
 **Repository:** [https://github.com/Ash96534/agent-browser](https://github.com/Ash96534/agent-browser)
 
-**Current Commit:** ea159a0 (docs: Update IMPLEMENTATION.md with Phase 2 & extraction progress)
+**Current Commit:** e128db1 (docs: Update SPEC.md with Phase 2/3 completion status)
