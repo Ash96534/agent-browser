@@ -36,9 +36,9 @@
 - Production-ready for automation use cases
 
 **Alternatives considered:**
-- CEF (Chromium Embedded Framework) — too low-level, more complex setup
-- Firefox via Marionette — less mature CDP support
-- WebView2 — Windows-only, less automation-focused
+- CEF (Chromium Embedded Framework) - too low-level, more complex setup
+- Firefox via Marionette - less mature CDP support
+- WebView2 - Windows-only, less automation-focused
 
 **Implementation:**
 - Package: PuppeteerSharp 19.0.0
@@ -59,9 +59,9 @@
 - Built-in ASP.NET Core support for both protocols
 
 **Alternatives considered:**
-- gRPC — more complex, overkill for this use case
-- Pure WebSocket — harder to debug/test
-- SignalR — good but WebSocket is simpler for our needs
+- gRPC - more complex, overkill for this use case
+- Pure WebSocket - harder to debug/test
+- SignalR - good but WebSocket is simpler for our needs
 
 **Implementation:**
 - REST Endpoints: ASP.NET Core controllers
@@ -116,7 +116,7 @@ src/
 - Clear separation of concerns
 - Testable layers
 - Can be packaged as libraries if needed
-- Dependencies flow: Shared → Browser → Core → API
+- Dependencies flow: Shared -> Browser -> Core -> API
 
 **Project Dependencies:**
 - `AgentBrowser.Shared` - No dependencies (core models)
@@ -296,18 +296,18 @@ None yet. All decisions are backward-compatible with current implementation.
 ## Archived Decisions
 
 ### Python vs C#
-- **Python** — Slower, good for prototyping
-- **C#** — Faster, production-ready
+- **Python** - Slower, good for prototyping
+- **C#** - Faster, production-ready
 - **Decision:** C# for performance-critical agent interactions
 
 ### FastAPI vs ASP.NET Core
-- **FastAPI** — Python, async-first, good docs
-- **ASP.NET Core** — C#, high-performance, mature
+- **FastAPI** - Python, async-first, good docs
+- **ASP.NET Core** - C#, high-performance, mature
 - **Decision:** ASP.NET Core for production performance
 
 ### PuppeteerSharp vs Playwright
-- **PuppeteerSharp** — Direct C# port of Node.js Puppeteer
-- **Playwright** — Multi-language, newer but less C# maturity
+- **PuppeteerSharp** - Direct C# port of Node.js Puppeteer
+- **Playwright** - Multi-language, newer but less C# maturity
 - **Decision:** PuppeteerSharp for C# ecosystem fit
 
 ---

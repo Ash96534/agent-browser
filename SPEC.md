@@ -6,7 +6,7 @@
 
 **Name:** AgentBrowser  
 **Type:** Standalone browser daemon with full API exposure  
-**Core Purpose:** Give AI agents complete, fine-grained control over browser behavior with capabilities beyond traditional automation tools — including access to hidden metadata, structured data extraction, and real-time DOM observation.
+**Core Purpose:** Give AI agents complete, fine-grained control over browser behavior with capabilities beyond traditional automation tools - including access to hidden metadata, structured data extraction, and real-time DOM observation.
 
 **Target Users:**
 - Autonomous AI agents needing web interaction
@@ -20,34 +20,35 @@
 ### 2.1 High-Level Design
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     AgentBrowser                            │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────────┐   │
-│  │ Agent API   │   │  WebSocket  │   │   MCP Server    │   │
-│  │ (REST/HTTP) │   │  Real-time  │   │ (LLM Integration)│   │
-│  └──────┬──────┘   └──────┬──────┘   └────────┬────────┘   │
-│         │                 │                    │            │
-│  ┌──────▼─────────────────▼────────────────────▼────────┐  │
-│  │              Control Plane (Orchestrator)            │  │
-│  │  - Session management    - Command routing           │  │
-│  │  - State sync            - Event broadcasting        │  │
-│  └──────────────────────────┬───────────────────────────┘  │
-│                             │                               │
-│  ┌──────────────────────────▼───────────────────────────┐  │
-│  │              Browser Engine (Chromium via CDP)       │  │
-│  │  - Rendering         - Network interception          │  │
-│  │  - JavaScript exec   - DOM access                    │  │
-│  │  - Storage           - Console capture               │  │
-│  └───────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-         ▲
-         │ HTTP/WebSocket/MCP
-         │
-    ┌────┴────┐
-    │  Agents │
-    │ (LLMs)  │
-    └─────────┘
++-------------------------------------------------------------+
+|                     AgentBrowser                            |
++-------------------------------------------------------------+
+|  +-----------+   +-----------+   +------------------+      |
+|  | Agent API |   | WebSocket |   |   MCP Server     |      |
+|  |(REST/HTTP)|   | Real-time |   |(LLM Integration) |      |
+|  +-----+-----+   +-----+-----+   +--------+---------+      |
+|        |               |                  |                |
+|  +-----v----------------v------------------v----------+    |
+|  |              Control Plane (Orchestrator)          |    |
+|  |  - Session management    - Command routing         |    |
+|  |  - State sync            - Event broadcasting      |    |
+|  +--------------------------+-------------------------+    |
+|                             |                              |
+|  +--------------------------v--------------------------+    |
+|  |              Browser Engine (Chromium via CDP)     |    |
+|  |  - Rendering         - Network interception        |    |
+|  |  - JavaScript exec   - DOM access                  |    |
+|  |  - Storage           - Console capture             |    |
+|  +----------------------------------------------------+    |
++-------------------------------------------------------------+
+         ^
+         |
+         | HTTP/WebSocket/MCP
+         |
+    +----+----+
+    |  Agents |
+    | (LLMs)  |
+    +---------+
 ```
 
 ### 2.2 Technology Stack
@@ -85,36 +86,36 @@
 
 ### 3.2 WebSocket Events
 
-**Server → Client:**
-- `console` — Console log message
-- `network` — Network request/response
-- `dom-update` — DOM mutation detected
-- `load-complete` — Page finished loading
-- `error` — Browser error
+**Server to Client:**
+- `console` - Console log message
+- `network` - Network request/response
+- `dom-update` - DOM mutation detected
+- `load-complete` - Page finished loading
+- `error` - Browser error
 
-**Client → Server:**
-- `navigate` — Navigate command
-- `execute` — JS execution
-- `subscribe` — Subscribe to event streams
+**Client to Server:**
+- `navigate` - Navigate command
+- `execute` - JS execution
+- `subscribe` - Subscribe to event streams
 
 ### 3.3 MCP Tools (for LLM Agents)
 
 ```
-browse_navigate(url: string) → navigation_result
-browse_click(selector: string) → click_result  
-browse_type(selector: string, text: string) → type_result
-browse_get_html() → html_content
-browse_get_screenshot() → base64_image
-browse_execute_js(code: string) → js_result
-browse_extract_schema(schema: ExtractionSchema) → extracted_data
-browse_get_hidden_metadata() → metadata
-browse_search_dom(query: string) → matching_elements
-browse_get_prices() → price_data
-browse_get_images_with_context() → images_with_context
-browse_get_forms() → form_data
-browse_get_links() → link_data
-browse_console_logs() → console_entries
-browse_network_logs() → network_entries
+browse_navigate(url: string) -> navigation_result
+browse_click(selector: string) -> click_result  
+browse_type(selector: string, text: string) -> type_result
+browse_get_html() -> html_content
+browse_get_screenshot() -> base64_image
+browse_execute_js(code: string) -> js_result
+browse_extract_schema(schema: ExtractionSchema) -> extracted_data
+browse_get_hidden_metadata() -> metadata
+browse_search_dom(query: string) -> matching_elements
+browse_get_prices() -> price_data
+browse_get_images_with_context() -> images_with_context
+browse_get_forms() -> form_data
+browse_get_links() -> link_data
+browse_console_logs() -> console_entries
+browse_network_logs() -> network_entries
 ```
 
 ---
@@ -232,7 +233,7 @@ public class ExtractionField
 
 ## 6. Implementation Phases
 
-### Phase 1: MVP (COMPLETED) ✅
+### Phase 1: MVP (COMPLETED)
 - [x] Chromium integration via PuppeteerSharp
 - [x] Basic session management
 - [x] Navigation and HTML retrieval
@@ -242,11 +243,11 @@ public class ExtractionField
 - [x] Hello world agent integration
 
 **Completed:**
-- ✅ Browser engine layer (IBrowserManager, BrowserManager)
-- ✅ Core services (SessionService, NavigationService, DomService, ScreenshotService)
-- ✅ Domain models (Session, Tab, Viewport, Cookie, etc.)
-- ✅ Request/Response models (NavigateRequest, ClickRequest, etc.)
-- ✅ Service dependency injection setup
+- Browser engine layer (IBrowserManager, BrowserManager)
+- Core services (SessionService, NavigationService, DomService, ScreenshotService)
+- Domain models (Session, Tab, Viewport, Cookie, etc.)
+- Request/Response models (NavigateRequest, ClickRequest, etc.)
+- Service dependency injection setup
 
 ### Phase 2: Core Agent Features (Next)
 - [ ] WebSocket real-time communication
@@ -282,57 +283,57 @@ public class ExtractionField
 
 ```
 agent-browser/
-├── src/
-│   ├── AgentBrowser.Api/           # REST API (controllers)
-│   │   ├── Controllers/
-│   │   │   ├── SessionController.cs
-│   │   │   ├── NavigationController.cs
-│   │   │   ├── DomController.cs
-│   │   │   └── ScreenshotController.cs
-│   │   └── Program.cs
-│   ├── AgentBrowser.Core/          # Business logic
-│   │   ├── Services/
-│   │   │   ├── ISessionService.cs
-│   │   │   ├── SessionService.cs
-│   │   │   ├── INavigationService.cs
-│   │   │   ├── NavigationService.cs
-│   │   │   ├── IDomService.cs
-│   │   │   ├── DomService.cs
-│   │   │   ├── IScreenshotService.cs
-│   │   │   └── ScreenshotService.cs
-│   │   └── Extensions/
-│   │       └── ServiceCollectionExtensions.cs
-│   ├── AgentBrowser.Browser/       # Browser engine
-│   │   ├── Browser/
-│   │   │   ├── IBrowserManager.cs
-│   │   │   └── BrowserManager.cs
-│   │   └── Extensions/
-│   │       └── TabExtensions.cs
-│   ├── AgentBrowser.MCP/           # MCP server
-│   │   ├── Server/
-│   │   │   ├── McpServer.cs
-│   │   │   ├── McpTransport.cs
-│   │   │   └── McpHandler.cs
-│   │   └── Tools/
-│   ├── AgentBrowser.Shared/        # Shared models
-│   │   ├── Models/
-│   │   │   ├── Session.cs
-│   │   │   ├── SessionOptions.cs
-│   │   │   ├── Tab.cs
-│   │   │   ├── Viewport.cs
-│   │   │   ├── Cookie.cs
-│   │   │   ├── Requests/          # API request models
-│   │   │   ├── Responses/         # API response models
-│   │   │   └── Common/            # Shared types
-│   └── models/
-│       └── schemas.py
-├── tests/
-│   ├── AgentBrowser.Tests.Unit/
-│   └── AgentBrowser.Tests.Integration/
-├── docker/
-│   └── Dockerfile
-├── AgentBrowser.sln
-└── README.md
++-- src/
+|   +-- AgentBrowser.Api/           # REST API (controllers)
+|   |   +-- Controllers/
+|   |   |   +-- SessionController.cs
+|   |   |   +-- NavigationController.cs
+|   |   |   +-- DomController.cs
+|   |   |   +-- ScreenshotController.cs
+|   |   +-- Program.cs
+|   +-- AgentBrowser.Core/          # Business logic
+|   |   +-- Services/
+|   |   |   +-- ISessionService.cs
+|   |   |   +-- SessionService.cs
+|   |   |   +-- INavigationService.cs
+|   |   |   +-- NavigationService.cs
+|   |   |   +-- IDomService.cs
+|   |   |   +-- DomService.cs
+|   |   |   +-- IScreenshotService.cs
+|   |   |   +-- ScreenshotService.cs
+|   |   +-- Extensions/
+|   |       +-- ServiceCollectionExtensions.cs
+|   +-- AgentBrowser.Browser/       # Browser engine
+|   |   +-- Browser/
+|   |   |   +-- IBrowserManager.cs
+|   |   |   +-- BrowserManager.cs
+|   |   +-- Extensions/
+|   |       +-- TabExtensions.cs
+|   +-- AgentBrowser.MCP/           # MCP server
+|   |   +-- Server/
+|   |   |   +-- McpServer.cs
+|   |   |   +-- McpTransport.cs
+|   |   |   +-- McpHandler.cs
+|   |   +-- Tools/
+|   +-- AgentBrowser.Shared/        # Shared models
+|       +-- Models/
+|           +-- Session.cs
+|           +-- SessionOptions.cs
+|           +-- Tab.cs
+|           +-- Viewport.cs
+|           +-- Cookie.cs
+|           +-- Requests/          # API request models
+|           +-- Responses/         # API response models
+|           +-- Common/            # Shared types
+|   +-- models/
+|       +-- schemas.py
++-- tests/
+|   +-- AgentBrowser.Tests.Unit/
+|   +-- AgentBrowser.Tests.Integration/
++-- docker/
+|   +-- Dockerfile
++-- AgentBrowser.sln
++-- README.md
 ```
 
 ---
@@ -340,23 +341,23 @@ agent-browser/
 ## 8. Key Design Decisions
 
 ### 8.1 Why C# (.NET 8)?
-- **Performance** — Compiled language, 5-10x faster than Python
-- **Native async** — Excellent async/await support for concurrent operations
-- **PuppeteerSharp** — Mature CDP wrapper with full browser control
-- **Type safety** — Compile-time error checking
-- **Production ready** — Strong tooling and debugging support
+- **Performance** - Compiled language, 5-10x faster than Python
+- **Native async** - Excellent async/await support for concurrent operations
+- **PuppeteerSharp** - Mature CDP wrapper with full browser control
+- **Type safety** - Compile-time error checking
+- **Production ready** - Strong tooling and debugging support
 
 ### 8.2 Why Chromium via PuppeteerSharp (CDP)?
-- **Standards compliance** — Agents can test real-world behavior
-- **Mature ecosystem** — Good debugging tools, documentation
-- **CDP exposure** — Deep access to browser internals
-- **Headless support** — Clean for automation
+- **Standards compliance** - Agents can test real-world behavior
+- **Mature ecosystem** - Good debugging tools, documentation
+- **CDP exposure** - Deep access to browser internals
+- **Headless support** - Clean for automation
 
 ### 8.3 Why separate API server?
-- **Language independence** — Agents can be in any language
-- **Scalability** — Multiple agents can share browser instances
-- **Security** — Browser runs in isolated process
-- **Statefulness** — Sessions persist beyond single requests
+- **Language independence** - Agents can be in any language
+- **Scalability** - Multiple agents can share browser instances
+- **Security** - Browser runs in isolated process
+- **Statefulness** - Sessions persist beyond single requests
 
 ### 8.4 Extended extraction philosophy
 The "hidden" data lives in:
@@ -371,10 +372,10 @@ We expose these through a unified extraction API rather than just raw HTML acces
 
 ## 9. Next Steps
 
-1. **Confirm architecture** — Does this alignment with your vision?
-2. **Pick language** — C# (.NET 8) selected for performance
-3. **Scope Phase 1** — MVP features: Session management, navigation, screenshot ✅ DONE
-4. **Infrastructure** — Docker for the prototype?
+1. **Confirm architecture** - Does this alignment with your vision?
+2. **Pick language** - C# (.NET 8) selected for performance
+3. **Scope Phase 1** - MVP features: Session management, navigation, screenshot (DONE)
+4. **Infrastructure** - Docker for the prototype?
 
 ---
 
@@ -382,11 +383,11 @@ We expose these through a unified extraction API rather than just raw HTML acces
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| Phase 1 | ✅ Complete | Browser engine layer, core services |
-| Phase 2 | ✅ Complete | API controllers, WebSocket infrastructure, 10 REST endpoints |
-| Phase 3 | ✅ Complete | Extraction service, 5 extraction endpoints |
-| Phase 4 | 🔄 In Progress | MCP server, agent integration |
-| Phase 5 | 📅 Future | Production readiness |
+| Phase 1 | Complete | Browser engine layer, core services |
+| Phase 2 | Complete | API controllers, WebSocket infrastructure, 10 REST endpoints |
+| Phase 3 | Complete | Extraction service, 5 extraction endpoints |
+| Phase 4 | In Progress | MCP server, agent integration |
+| Phase 5 | Future | Production readiness |
 
 ---
 

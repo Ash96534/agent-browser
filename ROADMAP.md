@@ -1,6 +1,6 @@
 # AgentBrowser Roadmap
 
-## Phase 1: MVP - Browser Engine Layer ✅ COMPLETED
+## Phase 1: MVP - Browser Engine Layer [COMPLETED]
 
 ### Completed
 - [x] Initialize .NET 8 solution structure (`AgentBrowser.sln`)
@@ -23,7 +23,7 @@
 
 ---
 
-## Phase 2: Core Agent Features ✅ COMPLETED
+## Phase 2: Core Agent Features [COMPLETED]
 
 ### Completed
 - [x] WebSocket handler for connection management
@@ -41,7 +41,7 @@
 
 ---
 
-## Phase 3: Extended Data Extraction ✅ COMPLETED
+## Phase 3: Extended Data Extraction [COMPLETED]
 
 ### Completed
 - [x] Extraction service created
@@ -61,7 +61,7 @@
 
 ---
 
-## Phase 4: Agent Integration � IN PROGRESS
+## Phase 4: Agent Integration [IN PROGRESS]
 
 ### In Progress
 - [ ] MCP server implementation (stdio transport)
@@ -79,7 +79,7 @@
 
 ---
 
-## Phase 5: Production Ready 📅 FUTURE
+## Phase 5: Production Ready [FUTURE]
 
 - [ ] Error handling and recovery
 - [ ] Rate limiting
@@ -95,28 +95,28 @@
 
 ## Current Status
 
-**Phase:** Phase 4 In Progress → MCP Server & Agent SDK Next  
+**Phase:** Phase 4 In Progress - MCP Server & Agent SDK Next  
 **Status:** Full API with 15+ endpoints, WebSocket infrastructure, Extraction service
 
 ### What's Working
-- ✅ Solution builds without errors
-- ✅ Browser engine creates/manages sessions
-- ✅ Navigation and screenshot operations available
-- ✅ Core services registered via DI
-- ✅ Domain models properly structured
-- ✅ 15 REST API endpoints:
+- Solution builds without errors
+- Browser engine creates/manages sessions
+- Navigation and screenshot operations available
+- Core services registered via DI
+- Domain models properly structured
+- 15 REST API endpoints:
   - Session (4 endpoints)
   - Navigation (3 endpoints)
   - DOM (4 endpoints)
   - Screenshot (2 endpoints)
   - Extraction (5 endpoints)
-- ✅ WebSocket handlers ready
-- ✅ WebSocket event types defined
+- WebSocket handlers ready
+- WebSocket event types defined
 
 ### What's Next
-- 🔄 MCP server implementation
-- 🔄 Agent SDK libraries
-- 🔄 API authentication
+- MCP server implementation
+- Agent SDK libraries
+- API authentication
 
 ---
 
@@ -124,16 +124,16 @@
 
 | Milestone | Date | Status |
 |-----------|------|--------|
-| Project Setup | 2026-10-16 | ✅ Complete |
-| Browser Engine Layer | 2026-10-16 | ✅ Complete |
-| REST API Controllers | 2026-10-17 | ✅ Complete (15 endpoints) |
-| WebSocket Support | 2026-10-17 | ✅ Complete (infrastructure) |
-| Extraction Service | 2026-10-17 | ✅ Complete (5 endpoints) |
-| MCP Server | 2026-10-18 | 🔄 In Progress |
-| Agent SDK | 2026-10-19 | � Scheduled |
-| Authentication | 2026-10-20 | 📅 Planned |
-| CI/CD Pipeline | 2026-10-22 | 📅 Planned |
-| Production Ready | 2026-10-25 | 📅 Planned |
+| Project Setup | 2026-10-16 | Complete |
+| Browser Engine Layer | 2026-10-16 | Complete |
+| REST API Controllers | 2026-10-17 | Complete (15 endpoints) |
+| WebSocket Support | 2026-10-17 | Complete (infrastructure) |
+| Extraction Service | 2026-10-17 | Complete (5 endpoints) |
+| MCP Server | 2026-10-18 | In Progress |
+| Agent SDK | 2026-10-19 | Scheduled |
+| Authentication | 2026-10-20 | Planned |
+| CI/CD Pipeline | 2026-10-22 | Planned |
+| Production Ready | 2026-10-25 | Planned |
 
 ---
 
