@@ -57,10 +57,13 @@
 
 ## Git Workflow
 
-- Always push to a new branch, never directly to main
-- Use semantic commit messages: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`
-- Keep PR titles under 70 characters
-- Commit message format: `<type>: <description>`
+- Do not create a merge PR for verified work unless the user explicitly asks.
+- Push directly to `master` after verification.
+- Commit messages must be detailed: state the purpose, key changes, and verification results.
+- Update documentation in the same commit whenever behavior changes (`README.md`, `SPEC.md`, `ROADMAP.md`, `IMPLEMENTATION.md`, `DECISIONS.md`, `docs/VERIFICATION.md`).
+- Use semantic commit prefixes: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`.
+- Commit message format: `<type>: <summary>`.
+- Open a PR only if the user explicitly asks or if the repository has branch protection requiring one.
 
 ## Verification
 

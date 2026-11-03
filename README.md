@@ -215,6 +215,16 @@ dotnet test tests/AgentBrowser.Tests.Integration --no-build --filter "Category=M
 
 Browser tests use local `data:` URLs and do not access the public network. They do need a downloaded Chromium binary; PuppeteerSharp downloads it on first use.
 
+## Development workflow
+
+No merge PR is required for verified work in this repository.
+
+- Run the build and tests before pushing.
+- Push directly to `master` after verification.
+- Commit messages must describe the intent, key changes, and verification results.
+- Documentation must be updated in the same commit as behavior changes.
+- See [AGENTS.md](AGENTS.md) for the project rules.
+
 ## Documentation
 
 - [SPEC.md](SPEC.md): current supported specification and known limitations.
