@@ -1,3 +1,4 @@
+using AgentBrowser.Api.WebSockets;
 using AgentBrowser.Browser.Browser;
 using AgentBrowser.Core.Services;
 
@@ -10,6 +11,9 @@ builder.Services.AddOpenApi();
 // Register AgentBrowser services
 builder.Services.AddAgentBrowserCore();
 
+// Register WebSocket handler
+builder.Services.AddSingleton<WebSocketHandler>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -20,6 +24,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
+// Enable WebSocket middleware
+app.UseWebSockets();
 
 app.MapControllers();
 

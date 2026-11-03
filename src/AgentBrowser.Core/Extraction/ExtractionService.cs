@@ -27,6 +27,7 @@ public class ExtractionService
         if (session == null)
             throw new KeyNotFoundException($"Session '{sessionId}' not found");
 
+        // In a real implementation, would extract metadata from the page
         _logger.LogInformation("Extracting metadata from session {SessionId}", sessionId);
 
         return new
@@ -65,6 +66,7 @@ public class ExtractionService
 
         _logger.LogInformation("Extracting prices from session {SessionId}", sessionId);
 
+        // In a real implementation, would scan for price patterns
         return new[]
         {
             new
@@ -89,6 +91,7 @@ public class ExtractionService
 
         _logger.LogInformation("Extracting images from session {SessionId}", sessionId);
 
+        // In a real implementation, would extract image data
         return new[]
         {
             new
@@ -115,6 +118,7 @@ public class ExtractionService
 
         _logger.LogInformation("Extracting forms from session {SessionId}", sessionId);
 
+        // In a real implementation, would extract form data
         return new[]
         {
             new
@@ -140,6 +144,7 @@ public class ExtractionService
 
         _logger.LogInformation("Extracting links from session {SessionId}", sessionId);
 
+        // In a real implementation, would extract link data
         return new[]
         {
             new
