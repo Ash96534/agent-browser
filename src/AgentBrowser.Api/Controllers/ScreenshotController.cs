@@ -32,9 +32,10 @@ public sealed class ScreenshotController : ControllerBase
         [FromQuery] bool fullPage = false,
         [FromQuery] string format = "png",
         [FromQuery] int? quality = null,
+        [FromQuery] int? maxBytes = null,
         CancellationToken cancellationToken = default)
     {
-        var request = CreateRequest(type, selector, fullPage, format, quality);
+        var request = CreateRequest(type, selector, fullPage, format, quality, maxBytes);
         var result = await _screenshotService.CaptureAsync(sessionId, request, cancellationToken);
         return Ok(result);
     }
@@ -49,20 +50,22 @@ public sealed class ScreenshotController : ControllerBase
         [FromQuery] bool fullPage = false,
         [FromQuery] string format = "png",
         [FromQuery] int? quality = null,
+        [FromQuery] int? maxBytes = null,
         CancellationToken cancellationToken = default)
     {
-        var request = CreateRequest(type, selector, fullPage, format, quality);
+        var request = CreateRequest(type, selector, fullPage, format, quality, maxBytes);
         var base64 = await _screenshotService.CaptureBase64Async(sessionId, request, cancellationToken);
         return Ok(new { base64 });
     }
 
-    private static ScreenshotRequest CreateRequest(string type, string? selector, bool fullPage, string format, int? quality)
+    private static ScreenshotRequest CreateRequest(string type, string? selector, bool fullPage, string format, int? quality, int? maxBytes = null)
         => new()
         {
             Type = Enum.Parse<ScreenshotType>(type, ignoreCase: true),
             Selector = selector,
             FullPage = fullPage,
             Format = format,
-            Quality = quality
+            Quality = quality,
+            MaxBytes = maxBytes
         };
 }

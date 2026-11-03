@@ -160,6 +160,7 @@ public static class BrowserTools
         [Description("Capture the full scrollable page instead of the viewport.")] bool fullPage = false,
         [Description("Image format: png, jpeg, jpg, or webp.")] string format = "png",
         [Description("JPEG/WebP quality from 0 to 100.")] int? quality = null,
+        [Description("Maximum allowed screenshot size in bytes.")] int? maxBytes = null,
         CancellationToken cancellationToken = default)
     {
         var screenshotService = services.GetRequiredService<IScreenshotService>();
@@ -168,7 +169,8 @@ public static class BrowserTools
             Type = fullPage ? AgentBrowser.Shared.Models.ScreenshotType.FullPage : AgentBrowser.Shared.Models.ScreenshotType.Viewport,
             FullPage = fullPage,
             Format = format,
-            Quality = quality
+            Quality = quality,
+            MaxBytes = maxBytes
         };
 
         return await screenshotService.CaptureAsync(sessionId, request, cancellationToken)

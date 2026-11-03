@@ -26,17 +26,26 @@ public sealed class ScreenshotService : IScreenshotService
     /// <inheritdoc />
     public async Task<ScreenshotResponse> CaptureAsync(string sessionId, ScreenshotRequest request, CancellationToken cancellationToken = default)
     {
-        var base64 = await CaptureBase64Async(sessionId, request, cancellationToken).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var bytes = await CaptureBytesAsync(sessionId, request, cancellationToken).ConfigureAwait(false);
 
         return new ScreenshotResponse
         {
-            ImageBase64 = base64,
-            Format = request.Format
+            ImageBase64 = Convert.ToBase64String(bytes),
+            Format = request.Format,
+            Bytes = bytes.Length
         };
     }
 
     /// <inheritdoc />
     public async Task<string> CaptureBase64Async(string sessionId, ScreenshotRequest request, CancellationToken cancellationToken = default)
+    {
+        var bytes = await CaptureBytesAsync(sessionId, request, cancellationToken).ConfigureAwait(false);
+        return Convert.ToBase64String(bytes);
+    }
+
+    private async Task<byte[]> CaptureBytesAsync(string sessionId, ScreenshotRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -44,7 +53,7 @@ public sealed class ScreenshotService : IScreenshotService
             .ConfigureAwait(false);
 
         _logger.LogInformation("Captured screenshot for session {SessionId}", sessionId);
-        return Convert.ToBase64String(bytes);
+        return bytes;
     }
 
     private static ScreenshotOptions ToOptions(ScreenshotRequest request) => new()
@@ -53,6 +62,7 @@ public sealed class ScreenshotService : IScreenshotService
         Selector = request.Selector,
         FullPage = request.FullPage,
         Format = request.Format,
-        Quality = request.Quality
+        Quality = request.Quality,
+        MaxBytes = request.MaxBytes
     };
 }

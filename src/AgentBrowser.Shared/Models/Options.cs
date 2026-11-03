@@ -13,6 +13,7 @@ public class ScreenshotOptions
     public bool FullPage { get; set; } = false;
     public string Format { get; set; } = "png";
     public int? Quality { get; set; }
+    public int? MaxBytes { get; set; }
 }
 
 public class ClickOptions

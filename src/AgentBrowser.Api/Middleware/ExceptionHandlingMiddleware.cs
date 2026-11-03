@@ -70,6 +70,7 @@ public sealed class ExceptionHandlingMiddleware
     {
         SessionNotFoundException => (StatusCodes.Status404NotFound, ErrorKind.SessionNotFound, ex.Message, false),
         KeyNotFoundException => (StatusCodes.Status404NotFound, ErrorKind.SessionNotFound, ex.Message, false),
+        RequestTooLargeException => (StatusCodes.Status413PayloadTooLarge, ErrorKind.RequestTooLarge, ex.Message, false),
         BrowserLaunchException => (StatusCodes.Status503ServiceUnavailable, ErrorKind.BrowserLaunchFailure, ex.Message, true),
         NavigationException => (StatusCodes.Status400BadRequest, ErrorKind.NavigationFailure, ex.Message, false),
         SelectorException => (StatusCodes.Status400BadRequest, ErrorKind.SelectorNotFound, ex.Message, false),

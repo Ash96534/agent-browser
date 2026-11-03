@@ -427,19 +427,23 @@ public sealed class BrowserManager : IBrowserManager
                             new ArgumentException("Selector not found.", nameof(options)));
                     }
 
-                    return await element.ScreenshotDataAsync(new ElementScreenshotOptions
+                    var elementBytes = await element.ScreenshotDataAsync(new ElementScreenshotOptions
                     {
                         Type = format,
                         Quality = format == PuppeteerSharp.ScreenshotType.Png ? null : options.Quality
                     }).ConfigureAwait(false);
+                    EnsureScreenshotSize(elementBytes, options);
+                    return elementBytes;
                 }
 
-                return await handle.Page.ScreenshotDataAsync(new PuppeteerSharp.ScreenshotOptions
+                var pageBytes = await handle.Page.ScreenshotDataAsync(new PuppeteerSharp.ScreenshotOptions
                 {
                     Type = format,
                     FullPage = fullPage,
                     Quality = format == PuppeteerSharp.ScreenshotType.Png ? null : options.Quality
                 }).ConfigureAwait(false);
+                EnsureScreenshotSize(pageBytes, options);
+                return pageBytes;
             }
             catch (OperationCanceledException)
             {
@@ -718,6 +722,15 @@ public sealed class BrowserManager : IBrowserManager
         return await handle.Page
             .EvaluateExpressionAsync<string>("document.body?.innerText ?? ''")
             .ConfigureAwait(false);
+    }
+
+    private static void EnsureScreenshotSize(byte[] bytes, AgentBrowser.Shared.Models.ScreenshotOptions options)
+    {
+        if (options.MaxBytes is > 0 && bytes.LongLength > options.MaxBytes.Value)
+        {
+            throw new AgentBrowser.Shared.Exceptions.RequestTooLargeException(
+                $"Screenshot exceeded the configured maximum of {options.MaxBytes} bytes.");
+        }
     }
 
     private static void MarkTabInteractive(SessionHandle handle)
