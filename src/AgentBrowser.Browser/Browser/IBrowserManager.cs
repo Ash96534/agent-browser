@@ -64,6 +64,11 @@ public interface IBrowserManager : IAsyncDisposable
     Task WaitForSelectorAsync(string sessionId, string selector, int timeout, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Evaluates a JavaScript function and returns its result as JSON.
+    /// </summary>
+    Task<string> EvaluateJsonFunctionAsync(string sessionId, string function, object[]? args = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Captures a screenshot as image bytes.
     /// </summary>
     Task<byte[]> ScreenshotAsync(string sessionId, ScreenshotOptions options, CancellationToken cancellationToken = default);

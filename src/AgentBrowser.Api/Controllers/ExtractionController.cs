@@ -3,129 +3,70 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AgentBrowser.Api.Controllers;
 
+/// <summary>
+/// Hidden-data extraction endpoints.
+/// </summary>
 [ApiController]
 [Route("session/{sessionId}/extract")]
-public class ExtractionController : ControllerBase
+public sealed class ExtractionController : ControllerBase
 {
     private readonly ExtractionService _extractionService;
 
+    /// <summary>
+    /// Creates an extraction controller.
+    /// </summary>
     public ExtractionController(ExtractionService extractionService)
     {
         _extractionService = extractionService;
     }
 
     /// <summary>
-    /// Extract hidden metadata (OG tags, JSON-LD, etc.)
+    /// Extracts hidden metadata (OG tags, JSON-LD, etc.).
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <returns>Extracted metadata</returns>
     [HttpGet("metadata")]
-    public async Task<ActionResult> ExtractMetadata(string sessionId)
+    public async Task<ActionResult> ExtractMetadata(string sessionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var metadata = await _extractionService.ExtractMetadataAsync(sessionId, sessionId);
-            return Ok(metadata);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var metadata = await _extractionService.ExtractMetadataAsync(sessionId, cancellationToken);
+        return Ok(metadata);
     }
 
     /// <summary>
-    /// Extract prices from the page
+    /// Extracts prices from the page.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <returns>List of prices</returns>
     [HttpGet("prices")]
-    public async Task<ActionResult> ExtractPrices(string sessionId)
+    public async Task<ActionResult> ExtractPrices(string sessionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var prices = await _extractionService.ExtractPricesAsync(sessionId, sessionId);
-            return Ok(prices);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var prices = await _extractionService.ExtractPricesAsync(sessionId, cancellationToken);
+        return Ok(prices);
     }
 
     /// <summary>
-    /// Extract images with context
+    /// Extracts images with context.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <returns>List of images with context</returns>
     [HttpGet("images")]
-    public async Task<ActionResult> ExtractImages(string sessionId)
+    public async Task<ActionResult> ExtractImages(string sessionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var images = await _extractionService.ExtractImagesAsync(sessionId, sessionId);
-            return Ok(images);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var images = await _extractionService.ExtractImagesAsync(sessionId, cancellationToken);
+        return Ok(images);
     }
 
     /// <summary>
-    /// Extract forms from the page
+    /// Extracts forms from the page.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <returns>List of forms</returns>
     [HttpGet("forms")]
-    public async Task<ActionResult> ExtractForms(string sessionId)
+    public async Task<ActionResult> ExtractForms(string sessionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var forms = await _extractionService.ExtractFormsAsync(sessionId, sessionId);
-            return Ok(forms);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var forms = await _extractionService.ExtractFormsAsync(sessionId, cancellationToken);
+        return Ok(forms);
     }
 
     /// <summary>
-    /// Extract links from the page
+    /// Extracts links from the page.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <returns>List of links</returns>
     [HttpGet("links")]
-    public async Task<ActionResult> ExtractLinks(string sessionId)
+    public async Task<ActionResult> ExtractLinks(string sessionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var links = await _extractionService.ExtractLinksAsync(sessionId, sessionId);
-            return Ok(links);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var links = await _extractionService.ExtractLinksAsync(sessionId, cancellationToken);
+        return Ok(links);
     }
 }

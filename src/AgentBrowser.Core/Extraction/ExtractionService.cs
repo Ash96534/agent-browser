@@ -1,17 +1,26 @@
 using AgentBrowser.Browser.Browser;
-using AgentBrowser.Shared.Models.Requests;
+using AgentBrowser.Shared.Models.Extraction;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace AgentBrowser.Core.Extraction;
 
 /// <summary>
-/// Service for extracting hidden data from web pages
+/// Service for extracting hidden data from web pages.
 /// </summary>
 public class ExtractionService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     private readonly IBrowserManager _browserManager;
     private readonly ILogger<ExtractionService> _logger;
 
+    /// <summary>
+    /// Creates an extraction service.
+    /// </summary>
     public ExtractionService(IBrowserManager browserManager, ILogger<ExtractionService> logger)
     {
         _browserManager = browserManager;
@@ -19,142 +28,70 @@ public class ExtractionService
     }
 
     /// <summary>
-    /// Extract hidden metadata (OG tags, JSON-LD, etc.)
+    /// Extracts hidden metadata (OG tags, JSON-LD, etc.).
     /// </summary>
-    public async Task<object> ExtractMetadataAsync(string sessionId, string tabId)
+    public async Task<PageMetadata> ExtractMetadataAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        var session = await _browserManager.GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
+        var json = await _browserManager
+            .EvaluateJsonFunctionAsync(sessionId, ExtractionScripts.Metadata, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
-        // In a real implementation, would extract metadata from the page
-        _logger.LogInformation("Extracting metadata from session {SessionId}", sessionId);
-
-        return new
-        {
-            Title = "Example Title",
-            Description = "Example description",
-            Url = session.Tabs.FirstOrDefault()?.Url,
-            OpenGraph = new
-            {
-                Title = "Example OG Title",
-                Type = "website",
-                Url = session.Tabs.FirstOrDefault()?.Url,
-                Image = new { Url = "" }
-            },
-            Twitter = new
-            {
-                Card = "summary",
-                Site = "@example"
-            },
-            JsonLd = new object(),
-            MetaTags = new object[]
-            {
-                new { name = "viewport", content = "width=device-width" }
-            }
-        };
+        return Deserialize<PageMetadata>(json) ??
+            new PageMetadata(null, null, null,
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                Array.Empty<JsonElement>(),
+                Array.Empty<MetaTag>());
     }
 
     /// <summary>
-    /// Extract prices from the page
+    /// Extracts prices from the page.
     /// </summary>
-    public async Task<IEnumerable<object>> ExtractPricesAsync(string sessionId, string tabId)
+    public async Task<IReadOnlyList<PriceInfo>> ExtractPricesAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        var session = await _browserManager.GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
+        var json = await _browserManager
+            .EvaluateJsonFunctionAsync(sessionId, ExtractionScripts.Prices, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
-        _logger.LogInformation("Extracting prices from session {SessionId}", sessionId);
-
-        // In a real implementation, would scan for price patterns
-        return new[]
-        {
-            new
-            {
-                Value = 99.99m,
-                Currency = "USD",
-                CurrencySymbol = "$",
-                Context = "product-card",
-                Selector = ".price"
-            }
-        };
+        return Deserialize<PriceInfo[]>(json) ?? Array.Empty<PriceInfo>();
     }
 
     /// <summary>
-    /// Extract images with context
+    /// Extracts image context from the page.
     /// </summary>
-    public async Task<IEnumerable<object>> ExtractImagesAsync(string sessionId, string tabId)
+    public async Task<IReadOnlyList<object>> ExtractImagesAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        var session = await _browserManager.GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
-
-        _logger.LogInformation("Extracting images from session {SessionId}", sessionId);
-
-        // In a real implementation, would extract image data
-        return new[]
-        {
-            new
-            {
-                Src = "https://example.com/image.jpg",
-                Alt = "Example image",
-                Title = "Example title",
-                Width = 800,
-                Height = 600,
-                Caption = "Example caption",
-                ParentContext = "article"
-            }
-        };
+        _logger.LogInformation("Image extraction is not implemented yet for session {SessionId}", sessionId);
+        return Array.Empty<object>();
     }
 
     /// <summary>
-    /// Extract forms from the page
+    /// Extracts forms from the page.
     /// </summary>
-    public async Task<IEnumerable<object>> ExtractFormsAsync(string sessionId, string tabId)
+    public async Task<IReadOnlyList<object>> ExtractFormsAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        var session = await _browserManager.GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
-
-        _logger.LogInformation("Extracting forms from session {SessionId}", sessionId);
-
-        // In a real implementation, would extract form data
-        return new[]
-        {
-            new
-            {
-                Action = "/submit",
-                Method = "POST",
-                Fields = new[]
-                {
-                    new { Name = "email", Type = "email", Required = true }
-                }
-            }
-        };
+        _logger.LogInformation("Form extraction is not implemented yet for session {SessionId}", sessionId);
+        return Array.Empty<object>();
     }
 
     /// <summary>
-    /// Extract links from the page
+    /// Extracts links from the page.
     /// </summary>
-    public async Task<IEnumerable<object>> ExtractLinksAsync(string sessionId, string tabId)
+    public async Task<IReadOnlyList<object>> ExtractLinksAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        var session = await _browserManager.GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
+        _logger.LogInformation("Link extraction is not implemented yet for session {SessionId}", sessionId);
+        return Array.Empty<object>();
+    }
 
-        _logger.LogInformation("Extracting links from session {SessionId}", sessionId);
-
-        // In a real implementation, would extract link data
-        return new[]
+    private static T? Deserialize<T>(string json)
+    {
+        try
         {
-            new
-            {
-                Href = "https://example.com",
-                Text = "Example Link",
-                Title = "Example title",
-                Rel = "noopener",
-                Target = "_blank"
-            }
-        };
+            return JsonSerializer.Deserialize<T>(json, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return default;
+        }
     }
 }

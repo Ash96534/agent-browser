@@ -1,4 +1,5 @@
 using PuppeteerSharp;
+using System.IO;
 
 namespace AgentBrowser.Browser.Browser;
 
@@ -7,44 +8,34 @@ namespace AgentBrowser.Browser.Browser;
 /// </summary>
 public sealed class PuppeteerBrowserEngine : IBrowserEngine
 {
-    private readonly SemaphoreSlim _installGate = new(1, 1);
-    private bool _installed;
+    private static readonly SemaphoreSlim DownloadGate = new(1, 1);
+    private static readonly string BrowserCachePath =
+        Environment.GetEnvironmentVariable("AGENTBROWSER_BROWSER_CACHE")
+        ?? Path.Combine("D:\\kiro_proj", ".agentbrowser-cache");
 
     /// <inheritdoc />
     public async Task<IBrowser> LaunchAsync(LaunchOptions options, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        if (!_installed)
-        {
-            await EnsureBrowserInstalledAsync(cancellationToken).ConfigureAwait(false);
-        }
-
+        await EnsureBrowserInstalledAsync(cancellationToken).ConfigureAwait(false);
         return await Puppeteer.LaunchAsync(options).ConfigureAwait(false);
     }
 
-    private async Task EnsureBrowserInstalledAsync(CancellationToken cancellationToken)
+    private static async Task EnsureBrowserInstalledAsync(CancellationToken cancellationToken)
     {
-        if (_installed)
-        {
-            return;
-        }
-
-        await _installGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await DownloadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_installed)
+            var fetcher = new BrowserFetcher(new BrowserFetcherOptions
             {
-                return;
-            }
-
-            var fetcher = new BrowserFetcher();
+                Path = BrowserCachePath
+            });
             await fetcher.DownloadAsync().ConfigureAwait(false);
-            _installed = true;
         }
         finally
         {
-            _installGate.Release();
+            DownloadGate.Release();
         }
     }
 }

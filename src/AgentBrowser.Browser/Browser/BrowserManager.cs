@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
 using AgentBrowser.Shared.Exceptions;
 using AgentBrowser.Shared.Models;
 using AgentBrowser.Shared.Models.Requests;
@@ -63,7 +64,7 @@ public sealed class BrowserManager : IBrowserManager
             browser = await _engine.LaunchAsync(new LaunchOptions
             {
                 Headless = options.Headless,
-                Args = options.Args?.ToArray()
+                Args = options.Args?.ToArray() ?? Array.Empty<string>()
             }, cancellationToken).ConfigureAwait(false);
 
             var page = await browser.NewPageAsync().ConfigureAwait(false);
@@ -272,6 +273,42 @@ public sealed class BrowserManager : IBrowserManager
             return await handle.Page
                 .EvaluateExpressionAsync<string>("document.body?.innerText ?? ''")
                 .ConfigureAwait(false);
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<string> EvaluateJsonFunctionAsync(
+        string sessionId,
+        string function,
+        object[]? args = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(function);
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                var element = await handle.Page
+                    .EvaluateFunctionAsync<JsonElement>(function, args ?? Array.Empty<object>())
+                    .ConfigureAwait(false);
+                return element.GetRawText();
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new AgentBrowserScriptExecutionException(
+                    $"JavaScript function evaluation failed: {ex.Message}", ex);
+            }
         }
         finally
         {
