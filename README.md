@@ -223,7 +223,7 @@ No merge PR is required for verified work in this repository.
 - Push directly to `master` after verification.
 - Commit messages must describe the intent, key changes, and verification results.
 - Documentation must be updated in the same commit as behavior changes.
-- See [AGENTS.md](AGENTS.md) for the project rules.
+- See [docs/VERIFICATION.md](docs/VERIFICATION.md) for recorded verification runs and the direct-master workflow.
 
 ## Documentation
 

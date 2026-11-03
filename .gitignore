@@ -32,6 +32,11 @@ Thumbs.db
 # Secrets
 *.env
 *.local
+
+# Local agent instructions
+AGENTS.md
+agents.md
+
 appsettings.*.json
 !appsettings.json
 !appsettings.Development.json

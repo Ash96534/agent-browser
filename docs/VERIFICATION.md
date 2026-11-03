@@ -30,7 +30,7 @@ Results:
 
 Notes:
 
-- Branch integration: `fix/working-mvp` through `ac968ca` was fast-forwarded into `master` and pushed directly, per the direct-master policy in AGENTS.md.
+- Branch integration: `fix/working-mvp` through `ac968ca` was fast-forwarded into `master` and pushed directly, per the direct-master policy.
 - Chromium is installed on first use into `.agentbrowser-cache` under the host application's output directory.
 - Set `AGENTBROWSER_BROWSER_CACHE` to override the default cache path.
 - The API smoke exposed a PuppeteerSharp path mismatch with a custom `BrowserFetcher` path. The engine now resolves the installed Chrome executable and passes `LaunchOptions.ExecutablePath`.
