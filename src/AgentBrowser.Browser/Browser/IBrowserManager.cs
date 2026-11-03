@@ -29,6 +29,16 @@ public interface IBrowserManager : IAsyncDisposable
     Task<DiagnosticsResponse> GetDiagnosticsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets buffered console logs for a session.
+    /// </summary>
+    Task<IReadOnlyList<ConsoleLogEntry>> GetConsoleLogsAsync(string sessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets buffered page errors for a session.
+    /// </summary>
+    Task<IReadOnlyList<PageErrorEntry>> GetPageErrorsAsync(string sessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Closes a session and its browser if it exists.
     /// </summary>
     Task<bool> CloseSessionAsync(string sessionId);

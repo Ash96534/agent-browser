@@ -1,3 +1,4 @@
+using AgentBrowser.Browser.Browser;
 using AgentBrowser.Core.Extraction;
 using AgentBrowser.Core.Services;
 using AgentBrowser.Shared.Models;
@@ -269,6 +270,85 @@ public static class BrowserTools
         var extractionService = services.GetRequiredService<ExtractionService>();
         return await extractionService.ExtractLinksAsync(sessionId, max, sameOrigin, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Lists active browser sessions.
+    /// </summary>
+    [McpServerTool(Name = "browse_list_sessions")]
+    [Description("List active browser sessions.")]
+    public static async Task<IReadOnlyList<SessionResponse>> ListSessions(
+        IServiceProvider services,
+        CancellationToken cancellationToken = default)
+    {
+        _ = cancellationToken;
+        var sessionService = services.GetRequiredService<ISessionService>();
+        return (await sessionService.GetAllSessionsAsync().ConfigureAwait(false)).ToList();
+    }
+
+    /// <summary>
+    /// Gets runtime health and diagnostics.
+    /// </summary>
+    [McpServerTool(Name = "browse_healthcheck")]
+    [Description("Get service diagnostics, uptime, and active sessions.")]
+    public static async Task<DiagnosticsResponse> Healthcheck(
+        IServiceProvider services,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.GetDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Closes every active browser session.
+    /// </summary>
+    [McpServerTool(Name = "browse_close_all_sessions")]
+    [Description("Close every active browser session.")]
+    public static async Task<int> CloseAllSessions(
+        IServiceProvider services,
+        CancellationToken cancellationToken = default)
+    {
+        var sessionService = services.GetRequiredService<ISessionService>();
+        var sessions = (await sessionService.GetAllSessionsAsync().ConfigureAwait(false)).ToList();
+
+        var closed = 0;
+        foreach (var session in sessions)
+        {
+            if (await sessionService.CloseSessionAsync(session.Id).ConfigureAwait(false))
+            {
+                closed++;
+            }
+        }
+
+        return closed;
+    }
+
+    /// <summary>
+    /// Gets recent console logs for a session.
+    /// </summary>
+    [McpServerTool(Name = "browse_get_console_logs")]
+    [Description("Get recent console log entries for a session.")]
+    public static async Task<IReadOnlyList<ConsoleLogEntry>> GetConsoleLogs(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.GetConsoleLogsAsync(sessionId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets recent page errors for a session.
+    /// </summary>
+    [McpServerTool(Name = "browse_get_page_errors")]
+    [Description("Get recent page errors for a session.")]
+    public static async Task<IReadOnlyList<PageErrorEntry>> GetPageErrors(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.GetPageErrorsAsync(sessionId, cancellationToken).ConfigureAwait(false);
     }
 
     private static WaitUntil? ParseWaitUntil(string? waitUntil)

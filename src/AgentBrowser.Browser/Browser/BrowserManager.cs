@@ -26,6 +26,8 @@ public sealed class BrowserManager : IBrowserManager
         public required IBrowser Browser { get; init; }
         public required IPage Page { get; init; }
         public SemaphoreSlim Gate { get; } = new(1, 1);
+        public List<ConsoleLogEntry> ConsoleLogs { get; } = new();
+        public List<PageErrorEntry> PageErrors { get; } = new();
 
         public ValueTask DisposeAsync()
         {
@@ -108,14 +110,13 @@ public sealed class BrowserManager : IBrowserManager
                 ]
             };
 
-            SubscribeToPageEvents(page, sessionId);
-
             var handle = new SessionHandle
             {
                 Session = session,
                 Browser = browser,
                 Page = page
             };
+            SubscribeToPageEvents(handle, page, sessionId);
 
             if (!_sessions.TryAdd(sessionId, handle))
             {
@@ -183,6 +184,26 @@ public sealed class BrowserManager : IBrowserManager
             ChromiumExecutablePath = path,
             IsChromiumAvailable = !string.IsNullOrWhiteSpace(path) && File.Exists(path)
         };
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<ConsoleLogEntry>> GetConsoleLogsAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        var handle = GetHandle(sessionId);
+        lock (handle.ConsoleLogs)
+        {
+            return Task.FromResult<IReadOnlyList<ConsoleLogEntry>>(handle.ConsoleLogs.ToList());
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<PageErrorEntry>> GetPageErrorsAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        var handle = GetHandle(sessionId);
+        lock (handle.PageErrors)
+        {
+            return Task.FromResult<IReadOnlyList<PageErrorEntry>>(handle.PageErrors.ToList());
+        }
     }
 
     /// <inheritdoc />
@@ -614,23 +635,46 @@ public sealed class BrowserManager : IBrowserManager
         _disposed = true;
     }
 
-    private void SubscribeToPageEvents(IPage page, string sessionId)
+    private void SubscribeToPageEvents(SessionHandle handle, IPage page, string sessionId)
     {
-        page.Console += (_, args) => PublishEvent(new BrowserConsoleEvent(
-            sessionId,
-            args.Message.Type.ToString(),
-            args.Message.Text,
-            DateTimeOffset.UtcNow));
+        page.Console += (_, args) =>
+        {
+            var entry = new ConsoleLogEntry(args.Message.Type.ToString(), args.Message.Text, DateTimeOffset.UtcNow);
+            lock (handle.ConsoleLogs)
+            {
+                handle.ConsoleLogs.Add(entry);
+                TrimBuffer(handle.ConsoleLogs, 200);
+            }
+
+            PublishEvent(new BrowserConsoleEvent(sessionId, entry.Level, entry.Message, entry.Timestamp));
+        };
 
         page.Load += (_, _) => PublishEvent(new BrowserLoadCompleteEvent(
             sessionId,
             page.Url,
             DateTimeOffset.UtcNow));
 
-        page.PageError += (_, args) => PublishEvent(new BrowserErrorEvent(
-            sessionId,
-            args.Message,
-            DateTimeOffset.UtcNow));
+        page.PageError += (_, args) =>
+        {
+            var entry = new PageErrorEntry(args.Message, DateTimeOffset.UtcNow);
+            lock (handle.PageErrors)
+            {
+                handle.PageErrors.Add(entry);
+                TrimBuffer(handle.PageErrors, 200);
+            }
+
+            PublishEvent(new BrowserErrorEvent(sessionId, entry.Message, entry.Timestamp));
+        };
+    }
+
+    private static void TrimBuffer<T>(List<T> buffer, int max)
+    {
+        if (buffer.Count <= max)
+        {
+            return;
+        }
+
+        buffer.RemoveRange(0, buffer.Count - max);
     }
 
     private void PublishEvent(BrowserEvent browserEvent)
