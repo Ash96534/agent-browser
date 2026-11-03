@@ -3,27 +3,32 @@ using AgentBrowser.Api.WebSockets;
 namespace AgentBrowser.Api.Middleware;
 
 /// <summary>
-/// Middleware for handling WebSocket connections
+/// Accepts WebSocket connections on <c>/ws/session/{sessionId}</c>.
 /// </summary>
-public class WebSocketMiddleware
+public sealed class WebSocketMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly WebSocketHandler _webSocketHandler;
 
+    /// <summary>
+    /// Creates the middleware.
+    /// </summary>
     public WebSocketMiddleware(RequestDelegate next, WebSocketHandler webSocketHandler)
     {
         _next = next;
         _webSocketHandler = webSocketHandler;
     }
 
+    /// <summary>
+    /// Routes matching WebSocket requests to the handler and passes others through.
+    /// </summary>
     public async Task InvokeAsync(HttpContext context)
     {
-        if (_webSocketHandler.IsWebSocketRequest(context))
+        if (context.WebSockets.IsWebSocketRequest &&
+            context.Request.Path.StartsWithSegments("/ws/session", out var remaining) &&
+            remaining.HasValue)
         {
-            // Extract session ID from path
-            var path = context.Request.Path.Value ?? "";
-            var sessionId = path.Replace("/ws/session/", "").TrimEnd('/');
-
+            var sessionId = remaining.Value!.Trim('/');
             if (!string.IsNullOrEmpty(sessionId))
             {
                 await _webSocketHandler.AcceptWebSocketAsync(context, sessionId);

@@ -105,6 +105,8 @@ public sealed class BrowserManager : IBrowserManager
                 ]
             };
 
+            SubscribeToPageEvents(page, sessionId);
+
             var handle = new SessionHandle
             {
                 Session = session,
@@ -556,6 +558,42 @@ public sealed class BrowserManager : IBrowserManager
         }
 
         _disposed = true;
+    }
+
+    private void SubscribeToPageEvents(IPage page, string sessionId)
+    {
+        page.Console += (_, args) => PublishEvent(new BrowserConsoleEvent(
+            sessionId,
+            args.Message.Type.ToString(),
+            args.Message.Text,
+            DateTimeOffset.UtcNow));
+
+        page.Load += (_, _) => PublishEvent(new BrowserLoadCompleteEvent(
+            sessionId,
+            page.Url,
+            DateTimeOffset.UtcNow));
+
+        page.PageError += (_, args) => PublishEvent(new BrowserErrorEvent(
+            sessionId,
+            args.Message,
+            DateTimeOffset.UtcNow));
+    }
+
+    private void PublishEvent(BrowserEvent browserEvent)
+    {
+        _ = PublishEventAsync(browserEvent);
+    }
+
+    private async Task PublishEventAsync(BrowserEvent browserEvent)
+    {
+        try
+        {
+            await _eventSink.PublishAsync(browserEvent).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish browser event {EventType}", browserEvent.GetType().Name);
+        }
     }
 
     private static void MarkTabInteractive(SessionHandle handle)
