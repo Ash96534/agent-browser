@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\src\AgentBrowser.Api\AgentBrowser.Api.csproj" />
     <ProjectReference Include="..\..\src\AgentBrowser.Browser\AgentBrowser.Browser.csproj" />
     <ProjectReference Include="..\..\src\AgentBrowser.Core\AgentBrowser.Core.csproj" />
+    <ProjectReference Include="..\..\src\AgentBrowser.MCP\AgentBrowser.MCP.csproj" />
     <ProjectReference Include="..\..\src\AgentBrowser.Shared\AgentBrowser.Shared.csproj" />
   </ItemGroup>
 
