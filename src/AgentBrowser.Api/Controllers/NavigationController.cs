@@ -1,88 +1,54 @@
 using AgentBrowser.Core.Services;
 using AgentBrowser.Shared.Models.Requests;
-using AgentBrowser.Shared.Models.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgentBrowser.Api.Controllers;
 
+/// <summary>
+/// Navigation and content endpoints.
+/// </summary>
 [ApiController]
 [Route("session/{sessionId}/navigate")]
-public class NavigationController : ControllerBase
+public sealed class NavigationController : ControllerBase
 {
     private readonly INavigationService _navigationService;
 
+    /// <summary>
+    /// Creates a navigation controller.
+    /// </summary>
     public NavigationController(INavigationService navigationService)
     {
         _navigationService = navigationService;
     }
 
     /// <summary>
-    /// Navigate to URL
+    /// Navigates a session to a URL.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <param name="request">Navigation request</param>
-    /// <returns>Navigation result</returns>
     [HttpPost]
-    public async Task<ActionResult> Navigate(string sessionId, [FromBody] NavigateRequest request)
+    public async Task<ActionResult> Navigate(string sessionId, [FromBody] NavigateRequest request,
+        CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await _navigationService.NavigateAsync(sessionId, request);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var result = await _navigationService.NavigateAsync(sessionId, request, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
-    /// Get rendered HTML
+    /// Gets the rendered HTML.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <returns>HTML content</returns>
     [HttpGet("/session/{sessionId}/html")]
-    public async Task<ActionResult> GetHtml(string sessionId)
+    public async Task<ActionResult> GetHtml(string sessionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await _navigationService.GetHtmlAsync(sessionId);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var result = await _navigationService.GetHtmlAsync(sessionId, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
-    /// Get page content
+    /// Gets the visible body text.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <returns>Content result</returns>
     [HttpGet("/session/{sessionId}/content")]
-    public async Task<ActionResult> GetContent(string sessionId)
+    public async Task<ActionResult> GetContent(string sessionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await _navigationService.GetContentAsync(sessionId);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var result = await _navigationService.GetContentAsync(sessionId, cancellationToken);
+        return Ok(result);
     }
 }

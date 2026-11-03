@@ -1,114 +1,68 @@
 using AgentBrowser.Core.Services;
 using AgentBrowser.Shared.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace AgentBrowser.Api.Controllers;
 
+/// <summary>
+/// DOM and JavaScript endpoints.
+/// </summary>
 [ApiController]
 [Route("session/{sessionId}/dom")]
-public class DomController : ControllerBase
+public sealed class DomController : ControllerBase
 {
     private readonly IDomService _domService;
 
+    /// <summary>
+    /// Creates a DOM controller.
+    /// </summary>
     public DomController(IDomService domService)
     {
         _domService = domService;
     }
 
     /// <summary>
-    /// Click element
+    /// Clicks an element.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <param name="request">Click request</param>
-    /// <returns>Success status</returns>
     [HttpPost("click")]
-    public async Task<ActionResult> Click(string sessionId, [FromBody] ClickRequest request)
+    public async Task<ActionResult> Click(string sessionId, [FromBody] ClickRequest request,
+        CancellationToken cancellationToken)
     {
-        try
-        {
-            await _domService.ClickAsync(sessionId, request);
-            return Ok(new { success = true });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        await _domService.ClickAsync(sessionId, request, cancellationToken);
+        return Ok(new { success = true });
     }
 
     /// <summary>
-    /// Type text into element
+    /// Types text into an element.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <param name="request">Type request</param>
-    /// <returns>Success status</returns>
     [HttpPost("type")]
-    public async Task<ActionResult> Type(string sessionId, [FromBody] TypeRequest request)
+    public async Task<ActionResult> Type(string sessionId, [FromBody] TypeRequest request,
+        CancellationToken cancellationToken)
     {
-        try
-        {
-            await _domService.TypeAsync(sessionId, request);
-            return Ok(new { success = true });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        await _domService.TypeAsync(sessionId, request, cancellationToken);
+        return Ok(new { success = true });
     }
 
     /// <summary>
-    /// Execute JavaScript
+    /// Executes JavaScript.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <param name="request">Execute JS request</param>
-    /// <returns>JS result</returns>
     [HttpPost("execute")]
-    public async Task<ActionResult> ExecuteJs<T>(string sessionId, [FromBody] ExecuteJsRequest request)
+    public async Task<ActionResult> ExecuteJs(string sessionId, [FromBody] ExecuteJsRequest request,
+        CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await _domService.ExecuteJsAsync<T>(sessionId, request);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var result = await _domService.ExecuteJsAsync<JsonElement>(sessionId, request, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
-    /// Wait for selector
+    /// Waits for a selector to appear.
     /// </summary>
-    /// <param name="sessionId">Session ID</param>
-    /// <param name="selector">CSS selector</param>
-    /// <param name="timeout">Timeout in ms (default: 30000)</param>
-    /// <returns>Success status</returns>
     [HttpGet("wait")]
-    public async Task<ActionResult> WaitForSelector(string sessionId, [FromQuery] string selector, [FromQuery] int timeout = 30000)
+    public async Task<ActionResult> WaitForSelector(string sessionId, [FromQuery] string selector,
+        [FromQuery] int timeout = 30000, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            await _domService.WaitForSelectorAsync(sessionId, selector, timeout);
-            return Ok(new { success = true });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        await _domService.WaitForSelectorAsync(sessionId, selector, timeout, cancellationToken);
+        return Ok(new { success = true });
     }
 }

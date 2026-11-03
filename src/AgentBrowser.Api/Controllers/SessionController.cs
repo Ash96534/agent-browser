@@ -1,100 +1,64 @@
 using AgentBrowser.Core.Services;
 using AgentBrowser.Shared.Models;
+using AgentBrowserSessionOptions = AgentBrowser.Shared.Models.SessionOptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgentBrowser.Api.Controllers;
 
+/// <summary>
+/// Session management endpoints.
+/// </summary>
 [ApiController]
 [Route("session")]
-public class SessionController : ControllerBase
+public sealed class SessionController : ControllerBase
 {
     private readonly ISessionService _sessionService;
 
+    /// <summary>
+    /// Creates a session controller.
+    /// </summary>
     public SessionController(ISessionService sessionService)
     {
         _sessionService = sessionService;
     }
 
     /// <summary>
-    /// Create a new browser session
+    /// Creates a new browser session.
     /// </summary>
-    /// <param name="options">Session configuration options</param>
-    /// <returns>The created session</returns>
     [HttpPost]
-    public async Task<ActionResult> CreateSession([FromBody] AgentBrowser.Shared.Models.SessionOptions options)
+    public async Task<ActionResult> CreateSession([FromBody] AgentBrowserSessionOptions options, CancellationToken cancellationToken)
     {
-        try
-        {
-            var session = await _sessionService.CreateSessionAsync(options);
-            return Ok(session);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var session = await _sessionService.CreateSessionAsync(options);
+        return Ok(session);
     }
 
     /// <summary>
-    /// Get session state
+    /// Gets a session by ID.
     /// </summary>
-    /// <param name="id">Session ID</param>
-    /// <returns>Session state</returns>
     [HttpGet("{id}")]
     public async Task<ActionResult> GetSession(string id)
     {
-        try
-        {
-            var session = await _sessionService.GetSessionAsync(id);
-            if (session == null)
-            {
-                return NotFound(new { error = "Session not found" });
-            }
-            return Ok(session);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var session = await _sessionService.GetSessionAsync(id);
+        return session is null ? NotFound(new { error = "Session not found" }) : Ok(session);
     }
 
     /// <summary>
-    /// Close a session
+    /// Closes a session.
     /// </summary>
-    /// <param name="id">Session ID</param>
-    /// <returns>Success status</returns>
     [HttpDelete("{id}")]
     public async Task<ActionResult> CloseSession(string id)
     {
-        try
-        {
-            var success = await _sessionService.CloseSessionAsync(id);
-            if (!success)
-            {
-                return NotFound(new { error = "Session not found" });
-            }
-            return Ok(new { success = true });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var success = await _sessionService.CloseSessionAsync(id);
+        return success ? Ok(new { success = true }) : NotFound(new { error = "Session not found" });
     }
 
     /// <summary>
-    /// Get all active sessions
+    /// Lists active sessions.
     /// </summary>
-    /// <returns>List of all sessions</returns>
     [HttpGet]
     public async Task<ActionResult> GetAllSessions()
     {
-        try
-        {
-            var sessions = await _sessionService.GetAllSessionsAsync();
-            return Ok(sessions);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var sessions = await _sessionService.GetAllSessionsAsync();
+        return Ok(sessions);
     }
 }
