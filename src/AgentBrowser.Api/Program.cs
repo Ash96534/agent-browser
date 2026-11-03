@@ -1,26 +1,27 @@
+using AgentBrowser.Api.Middleware;
+using AgentBrowser.Api.WebSockets;
 using AgentBrowser.Browser.Browser;
-using AgentBrowser.Core.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-
-// Register AgentBrowser services
 builder.Services.AddAgentBrowserCore();
+builder.Services.AddSingleton<WebSocketHandler>();
+builder.Services.AddSingleton<IBrowserEventSink>(sp => sp.GetRequiredService<WebSocketHandler>());
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
-app.UseAuthorization();
-
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseWebSockets();
+app.UseMiddleware<WebSocketMiddleware>();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

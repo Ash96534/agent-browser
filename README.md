@@ -1,248 +1,228 @@
 # AgentBrowser
 
-> A fully exposed, agent-centric web browser for autonomous AI agents - built for speed, visibility, and control.
+> A local browser-control daemon for AI agents, backed by Chromium and PuppeteerSharp.
 
-AgentBrowser gives AI agents complete, fine-grained control over browser behavior with capabilities beyond traditional automation tools. Get access to hidden metadata, structured data extraction, and real-time DOM observation - all powered by C# for 5-10x better performance than Python alternatives.
+AgentBrowser exposes a controlled Chromium instance to agents through a REST API, a WebSocket event stream, and an MCP server over stdio. It is a single-tab MVP: one Chromium browser per session and one active page per session.
 
-## Features
+## Current status
 
-- **High Performance** - C# (.NET 8) + PuppeteerSharp, 5-10x faster than Python
-- **Full Browser Control** - Navigate, click, type, scroll, execute JavaScript
-- **Extended Data Extraction** - Hidden metadata (OG, JSON-LD), prices, image context
-- **Real-time Events** - WebSocket streaming for console, network, DOM updates
-- **MCP Integration** - Native Model Context Protocol support for LLM agents
-- **REST API** - 15+ endpoints for session, navigation, DOM, screenshot, extraction
+| Area | Status |
+|------|--------|
+| Session lifecycle | Implemented and verified |
+| Navigation and page content | Implemented and verified |
+| DOM click, type, wait, JavaScript | Implemented and verified |
+| Screenshots (viewport, full page, element) | Implemented and verified |
+| Hidden metadata, prices, images, forms, links | Implemented and verified |
+| WebSocket console, load-complete, page-error | Implemented and verified |
+| MCP over stdio | Implemented and verified |
 
-## Documentation
+## What is supported
 
-| Document | Description |
-|----------|-------------|
-| [SPEC.md](SPEC.md) | Complete technical specification |
-| [DECISIONS.md](DECISIONS.md) | Architecture decisions and rationale |
-| [ROADMAP.md](ROADMAP.md) | Development roadmap and progress |
-| [IMPLEMENTATION.md](IMPLEMENTATION.md) | Detailed task breakdown |
+- One Chromium browser per session; exactly one active page per session.
+- Session create, get, list, and close.
+- Navigate, get rendered HTML, and get visible body text.
+- Click, type, execute JavaScript, and wait for a selector.
+- Capture viewport, full-page, or element screenshots as PNG or JPEG.
+- Extract metadata, prices, images, forms, and links.
+- Receive console, page load, and page error events on `/ws/session/{sessionId}`.
+- Control the browser from an MCP client using standard initialize, tools/list, and tools/call.
 
-## Quick Start
+## What is not supported yet
+
+- Multiple tabs per session.
+- Network interception, request modification, mocking, or blocking.
+- DOM mutation events.
+- Session persistence, authentication, authorization, or rate limiting.
+- Multi-instance scaling and distributed state.
+- Docker, PDF generation, and image caching beyond PuppeteerSharp.
+
+## Requirements
+
+- .NET 10 SDK 10.0.301 or later.
+- Windows is the verified platform for this branch.
+- Chromium, downloaded automatically on first use.
+- Set `AGENTBROWSER_BROWSER_CACHE` to override the Chromium cache location.
+
+## Quick start
 
 ```bash
-# Clone the repository
 git clone https://github.com/Ash96534/agent-browser.git
 cd agent-browser
 
-# Build the solution
-dotnet build
+dotnet restore AgentBrowser.sln
+dotnet build AgentBrowser.sln --nologo -warnaserror
+dotnet test AgentBrowser.sln --no-build --nologo
 
-# Run the API server
 dotnet run --project src/AgentBrowser.Api
-
-# Run the MCP server
-dotnet run --project src/AgentBrowser.MCP
 ```
 
-## API Endpoints
+The API listens on the URL configured by ASP.NET Core. Health check:
 
-### Session Management
+```bash
+curl http://localhost:5000/health
 ```
-POST   /session              - Create new browser session
-GET    /session/{id}         - Get session state
-DELETE /session/{id}         - Close session
-GET    /session              - List all active sessions
+
+## HTTP endpoints
+
+### Sessions
+
+```text
+POST   /session
+GET    /session
+GET    /session/{id}
+DELETE /session/{id}
 ```
 
 ### Navigation
-```
-POST   /session/{id}/navigate   - Navigate to URL
-GET    /session/{id}/html       - Get rendered HTML
-GET    /session/{id}/content    - Get page content
-```
 
-### DOM Operations
-```
-POST   /session/{id}/dom/click      - Click element
-POST   /session/{id}/dom/type       - Type text
-POST   /session/{id}/dom/execute    - Execute JavaScript
-GET    /session/{id}/dom/wait       - Wait for selector
+```text
+POST   /session/{sessionId}/navigate
+GET    /session/{sessionId}/html
+GET    /session/{sessionId}/content
 ```
 
-### Screenshot
-```
-GET    /session/{id}/screenshot        - Capture screenshot
-GET    /session/{id}/screenshot/base64 - Capture as base64
-```
+### DOM and JavaScript
 
-### Extraction (Hidden Data)
-```
-GET    /session/{id}/extract/metadata - Extract metadata (OG, JSON-LD)
-GET    /session/{id}/extract/prices   - Extract prices
-GET    /session/{id}/extract/images   - Extract images with context
-GET    /session/{id}/extract/forms    - Extract forms
-GET    /session/{id}/extract/links    - Extract links
+```text
+POST   /session/{sessionId}/dom/click
+POST   /session/{sessionId}/dom/type
+POST   /session/{sessionId}/dom/execute
+GET    /session/{sessionId}/dom/wait?selector=...&timeout=30000
 ```
 
-### Health Check
-```
-GET    /health - Health check
-```
+### Screenshots
 
-## MCP Tools
-
-AgentBrowser exposes 11 MCP tools for LLM agent integration:
-
-| Tool | Description |
-|------|-------------|
-| `browse_navigate` | Navigate to URL |
-| `browse_click` | Click element by selector |
-| `browse_type` | Type text into element |
-| `browse_get_html` | Get rendered HTML |
-| `browse_get_screenshot` | Get base64 screenshot |
-| `browse_execute_js` | Execute JavaScript |
-| `browse_extract_schema` | Extract data by schema |
-| `browse_get_metadata` | Extract metadata (OG, JSON-LD) |
-| `browse_get_prices` | Extract prices |
-| `browse_get_images` | Extract images with context |
-| `browse_get_forms` | Extract forms |
-
-## Architecture
-
-```
-+-------------------------------------------------------------+
-|                     AgentBrowser                            |
-+-------------------------------------------------------------+
-|  +-----------+   +-----------+   +------------------+      |
-|  | Agent API |   | WebSocket |   |   MCP Server     |      |
-|  |(REST/HTTP)|   | Real-time |   |(LLM Integration) |      |
-|  +-----+-----+   +-----+-----+   +--------+---------+      |
-|        |               |                  |                |
-|  +-----v----------------v------------------v----------+    |
-|  |              Control Plane (Orchestrator)          |    |
-|  |  - Session management    - Command routing         |    |
-|  +--------------------------+-------------------------+    |
-|                             |                              |
-|  +--------------------------v--------------------------+    |
-|  |              Browser Engine (Chromium via CDP)     |    |
-|  |  - Rendering         - Network interception        |    |
-|  |  - JavaScript exec   - DOM access                  |    |
-|  +----------------------------------------------------+    |
-+-------------------------------------------------------------+
+```text
+GET    /session/{sessionId}/screenshot?type=viewport|fullpage|element&format=png|jpeg&quality=80
+GET    /session/{sessionId}/screenshot/base64?type=viewport
 ```
 
-## Project Structure
+### Extraction
 
-```
-agent-browser/
-+-- src/
-|   +-- AgentBrowser.Api/          # REST API controllers
-|   |   +-- Controllers/
-|   |   |   +-- SessionController.cs
-|   |   |   +-- NavigationController.cs
-|   |   |   +-- DomController.cs
-|   |   |   +-- ScreenshotController.cs
-|   |   |   +-- ExtractionController.cs
-|   |   +-- WebSockets/            # WebSocket handlers
-|   +-- AgentBrowser.Core/         # Business logic
-|   |   +-- Services/              # Core services
-|   |   +-- Extraction/            # Extraction service
-|   |   +-- Extensions/
-|   +-- AgentBrowser.Browser/      # Browser engine
-|   |   +-- Browser/
-|   |   |   +-- IBrowserManager.cs
-|   |   |   +-- BrowserManager.cs
-|   |   +-- Extensions/
-|   +-- AgentBrowser.MCP/          # MCP server
-|   |   +-- McpServer.cs
-|   |   +-- Program.cs
-|   +-- AgentBrowser.Shared/       # Shared models
-|       +-- Models/
-+-- tests/
-|   +-- AgentBrowser.Tests.Unit/
-|   +-- AgentBrowser.Tests.Integration/
-+-- docker/
-|   +-- Dockerfile
-+-- AgentBrowser.sln
-+-- README.md
-+-- SPEC.md
-+-- DECISIONS.md
-+-- ROADMAP.md
-+-- IMPLEMENTATION.md
+```text
+GET    /session/{sessionId}/extract/metadata
+GET    /session/{sessionId}/extract/prices
+GET    /session/{sessionId}/extract/images
+GET    /session/{sessionId}/extract/forms
+GET    /session/{sessionId}/extract/links
 ```
 
-## Technology Stack
+### Health
 
-| Layer | Technology | Rationale |
-|-------|------------|-----------|
-| Language | C# (.NET 8) | 5-10x faster than Python |
-| Browser | Chromium via PuppeteerSharp | Standards-compliant, CDP access |
-| API Server | ASP.NET Core | High-performance HTTP |
-| MCP Server | Custom implementation | Native LLM integration |
-| WebSocket | Built-in | Real-time event streaming |
-| DI Container | Microsoft.Extensions | Standard .NET DI |
-
-## Current Status
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 1 | Complete | Browser engine layer, core services |
-| Phase 2 | Complete | 15 REST endpoints + WebSocket |
-| Phase 3 | Complete | Extraction service, 5 endpoints |
-| Phase 4 | Complete | MCP server, 11 tools |
-| Phase 5 | In Progress | Production readiness features |
-
-### What's Working
-- Full session management via REST API
-- Navigation with wait states
-- DOM operations (click, type, JS execution)
-- Screenshot capture
-- 5 extraction endpoints for hidden data
-- WebSocket infrastructure with event types
-- MCP server with 11 tools
-
-### What's Next
-- Console log streaming (Puppeteer console hook)
-- Network request capture (request interception)
-- Unit and integration tests
-- API authentication (API key)
-- Session persistence with SQLite
-
-## Development
-
-### Build
-```bash
-dotnet build
+```text
+GET    /health
 ```
 
-### Run API Server
-```bash
-dotnet run --project src/AgentBrowser.Api
+### WebSocket
+
+```text
+GET    /ws/session/{sessionId}
 ```
 
-API will be available at: `https://localhost:5000`
+WebSocket messages use a `type` field and a `sessionId`. Supported event types are `console`, `load-complete`, and `error`.
 
-### Run MCP Server
+## MCP tools
+
+The MCP server uses stdio and standard MCP initialize, tools/list, and tools/call.
+
+```text
+browse_create_session
+browse_close_session
+browse_navigate
+browse_click
+browse_type
+browse_get_html
+browse_get_screenshot
+browse_execute_js
+browse_get_metadata
+browse_get_prices
+browse_get_images
+browse_get_forms
+browse_get_links
+```
+
+Run it with:
+
 ```bash
 dotnet run --project src/AgentBrowser.MCP
 ```
 
-MCP server uses stdio transport for LLM integration.
+MCP logs are written to stderr. Stdout contains only MCP protocol frames.
 
-### Run Tests
-```bash
-dotnet test
+## Architecture
+
+```text
+Agent / application
+        |
+        | HTTP, WebSocket, or MCP
+        v
+ASP.NET Core API / MCP server
+        |
+        | Core services
+        v
+Browser layer
+        |
+        | PuppeteerSharp / CDP
+        v
+Chromium
 ```
 
-## Contributing
+The layers are:
 
-Contributions are welcome! Please:
+- `AgentBrowser.Shared`: models, responses, requests, and exceptions.
+- `AgentBrowser.Browser`: Chromium startup and page operations.
+- `AgentBrowser.Core`: service adapters and extraction logic.
+- `AgentBrowser.Api`: REST controllers, middleware, and WebSocket streaming.
+- `AgentBrowser.MCP`: MCP server based on the official C# SDK.
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m "feat: Add some feature"`
-4. Push to the branch: `git push origin feature/your-feature`
-5. Open a Pull Request
+## Project structure
+
+```text
+AgentBrowser.sln
+global.json
+src/
+  AgentBrowser.Api/
+    Controllers/
+    Middleware/
+    WebSockets/
+  AgentBrowser.Browser/
+    Browser/
+  AgentBrowser.Core/
+    Extraction/
+    Services/
+    Extensions/
+  AgentBrowser.MCP/
+    Tools/
+  AgentBrowser.Shared/
+    Exceptions/
+    Models/
+tests/
+  AgentBrowser.Tests.Unit/
+  AgentBrowser.Tests.Integration/
+docs/
+  VERIFICATION.md
+  superpowers/plans/
+```
+
+## Development
+
+```bash
+dotnet build AgentBrowser.sln --nologo -warnaserror
+dotnet test AgentBrowser.sln --no-build --nologo
+dotnet test tests/AgentBrowser.Tests.Integration --no-build --filter "Category=Browser"
+dotnet test tests/AgentBrowser.Tests.Integration --no-build --filter "Category=Mcp"
+```
+
+Browser tests use local `data:` URLs and do not access the public network. They do need a downloaded Chromium binary; PuppeteerSharp downloads it on first use.
+
+## Documentation
+
+- [SPEC.md](SPEC.md): current supported specification and known limitations.
+- [IMPLEMENTATION.md](IMPLEMENTATION.md): implementation map and verification status.
+- [ROADMAP.md](ROADMAP.md): current and planned work.
+- [DECISIONS.md](DECISIONS.md): architecture decisions.
+- [docs/VERIFICATION.md](docs/VERIFICATION.md): recorded verification runs.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Built for agents, by developers who understand what agents need.**
+License: undecided. This repository does not currently contain a `LICENSE` file.

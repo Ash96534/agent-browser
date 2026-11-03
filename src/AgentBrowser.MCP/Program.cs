@@ -1,29 +1,20 @@
-using AgentBrowser.Browser.Browser;
-using AgentBrowser.Core.Extraction;
-using AgentBrowser.Core.Services;
 using AgentBrowser.MCP;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
 
-var builder = Host.CreateDefaultBuilder(args);
+var builder = Host.CreateApplicationBuilder(args);
 
-builder.ConfigureServices((context, services) =>
+builder.Logging.AddConsole(options =>
 {
-    services.AddAgentBrowserCore();
+    options.LogToStandardErrorThreshold = LogLevel.Trace;
 });
 
-var host = builder.Build();
+builder.Services.AddAgentBrowserCore();
+builder.Services
+    .AddMcpServer()
+    .WithStdioServerTransport()
+    .WithToolsFromAssembly();
 
-// Initialize service provider
-var serviceProvider = host.Services;
-
-using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-var logger = loggerFactory.CreateLogger<McpServer>();
-
-var server = new McpServer(serviceProvider, logger);
-
-Console.WriteLine("AgentBrowser MCP Server starting...");
-Console.WriteLine("Use stdin/stdout for MCP protocol communication.");
-
-await server.StartAsync();
+await builder.Build().RunAsync().ConfigureAwait(false);

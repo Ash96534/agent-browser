@@ -56,9 +56,12 @@ public class SessionService : ISessionService
     {
         try
         {
-            await _browserManager.CloseSessionAsync(sessionId);
-            _logger.LogInformation("Closed session {SessionId}", sessionId);
-            return true;
+            var closed = await _browserManager.CloseSessionAsync(sessionId);
+            if (closed)
+            {
+                _logger.LogInformation("Closed session {SessionId}", sessionId);
+            }
+            return closed;
         }
         catch (Exception ex)
         {

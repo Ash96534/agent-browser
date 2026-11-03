@@ -1,85 +1,75 @@
 using AgentBrowser.Shared.Models;
+using AgentBrowser.Shared.Models.Requests;
 
 namespace AgentBrowser.Browser.Browser;
 
 /// <summary>
-/// Interface for managing browser sessions and tabs
+/// Manages browser sessions and their single page.
 /// </summary>
-public interface IBrowserManager
+public interface IBrowserManager : IAsyncDisposable
 {
     /// <summary>
-    /// Creates a new browser session
+    /// Creates a new browser session and page.
     /// </summary>
-    /// <param name="options">Session configuration options</param>
-    /// <returns>The created session</returns>
-    Task<Session> CreateSessionAsync(SessionOptions options);
+    Task<Session> CreateSessionAsync(SessionOptions options, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets a session by ID
+    /// Gets a session by ID, updating its last-access time.
     /// </summary>
-    /// <param name="sessionId">The session identifier</param>
-    /// <returns>The session if found, null otherwise</returns>
     Task<Session?> GetSessionAsync(string sessionId);
 
     /// <summary>
-    /// Closes a session
+    /// Gets all active sessions.
     /// </summary>
-    /// <param name="sessionId">The session identifier</param>
-    /// <returns>True if session was closed successfully</returns>
+    Task<IReadOnlyList<Session>> GetAllSessionsAsync();
+
+    /// <summary>
+    /// Closes a session and its browser if it exists.
+    /// </summary>
     Task<bool> CloseSessionAsync(string sessionId);
 
     /// <summary>
-    /// Gets all active sessions
+    /// Navigates a session to a URL.
     /// </summary>
-    /// <returns>Collection of all sessions</returns>
-    Task<IEnumerable<Session>> GetAllSessionsAsync();
+    Task<PageNavigationResult> NavigateAsync(string sessionId, NavigateRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Navigates a tab to a URL
+    /// Gets the rendered page HTML.
     /// </summary>
-    /// <param name="sessionId">The session identifier</param>
-    /// <param name="tabId">The tab identifier</param>
-    /// <param name="url">The URL to navigate to</param>
-    /// <param name="options">Navigation options</param>
-    /// <returns>Navigation response</returns>
-    Task<object> NavigateAsync(string sessionId, string tabId, string url, object? options = null);
+    Task<string> GetHtmlAsync(string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Takes a screenshot of a tab
+    /// Gets the visible body text.
     /// </summary>
-    /// <param name="sessionId">The session identifier</param>
-    /// <param name="tabId">The tab identifier</param>
-    /// <param name="options">Screenshot options</param>
-    /// <returns>Base64 encoded screenshot</returns>
-    Task<string> ScreenshotAsync(string sessionId, string tabId, object options);
+    Task<string> GetContentTextAsync(string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Executes JavaScript in a tab
+    /// Evaluates a JavaScript expression and deserializes the result.
     /// </summary>
-    /// <param name="sessionId">The session identifier</param>
-    /// <param name="tabId">The tab identifier</param>
-    /// <param name="script">The JavaScript to execute</param>
-    /// <returns>The result of the JavaScript execution</returns>
-    Task<object> EvaluateExpressionAsync(string sessionId, string tabId, string script);
+    Task<T> EvaluateExpressionAsync<T>(string sessionId, string script, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Clicks an element in a tab
+    /// Clicks an element.
     /// </summary>
-    /// <param name="sessionId">The session identifier</param>
-    /// <param name="tabId">The tab identifier</param>
-    /// <param name="selector">CSS selector for the element</param>
-    /// <param name="options">Click options</param>
-    /// <returns>Task</returns>
-    Task ClickAsync(string sessionId, string tabId, string selector, object? options = null);
+    Task ClickAsync(string sessionId, string selector, ClickOptions options, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Types text into an element in a tab
+    /// Types text into an element.
     /// </summary>
-    /// <param name="sessionId">The session identifier</param>
-    /// <param name="tabId">The tab identifier</param>
-    /// <param name="selector">CSS selector for the element</param>
-    /// <param name="text">Text to type</param>
-    /// <param name="delay">Delay between keystrokes</param>
-    /// <returns>Task</returns>
-    Task TypeAsync(string sessionId, string tabId, string selector, string text, int delay = 0);
+    Task TypeAsync(string sessionId, string selector, string text, int delay, bool clearFirst, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Waits for a selector to appear.
+    /// </summary>
+    Task WaitForSelectorAsync(string sessionId, string selector, int timeout, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Evaluates a JavaScript function and returns its result as JSON.
+    /// </summary>
+    Task<string> EvaluateJsonFunctionAsync(string sessionId, string function, object[]? args = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Captures a screenshot as image bytes.
+    /// </summary>
+    Task<byte[]> ScreenshotAsync(string sessionId, ScreenshotOptions options, CancellationToken cancellationToken = default);
 }

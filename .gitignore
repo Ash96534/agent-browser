@@ -19,6 +19,7 @@ obj/
 dist/
 build/
 publish/
+.agentbrowser-cache/
 
 # NuGet
 packages/

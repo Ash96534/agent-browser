@@ -1,4 +1,5 @@
 using AgentBrowser.Browser.Browser;
+using AgentBrowser.Core.Extraction;
 using AgentBrowser.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,11 +11,14 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Action<BrowserSettings>? configureBrowser = null)
     {
+        services.AddSingleton<IBrowserEngine, PuppeteerBrowserEngine>();
+        services.AddSingleton<IBrowserEventSink>(NullBrowserEventSink.Instance);
         services.AddSingleton<IBrowserManager, BrowserManager>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<INavigationService, NavigationService>();
         services.AddScoped<IDomService, DomService>();
         services.AddScoped<IScreenshotService, ScreenshotService>();
+        services.AddScoped<ExtractionService>();
         
         if (configureBrowser != null)
         {
