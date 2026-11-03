@@ -65,4 +65,64 @@ internal static class ExtractionScripts
       return items;
     }
     """;
+
+    public const string Images = """
+    () => [...document.querySelectorAll('img')].map(img => {
+      const figure = img.closest('figure');
+      const caption = figure?.querySelector('figcaption')?.textContent?.trim() ?? null;
+      const parentContext = img.closest('article') ? 'article' :
+          img.closest('section') ? 'section' :
+          img.closest('[data-product]') ? 'product-card' :
+          img.closest('li') ? 'list-item' : 'page';
+      return {
+        src: img.currentSrc || img.src || img.getAttribute('data-src') || null,
+        alt: img.alt || null,
+        title: img.title || null,
+        width: img.getAttribute('width') ? Number(img.getAttribute('width')) :
+            (img.naturalWidth || img.width || null),
+        height: img.getAttribute('height') ? Number(img.getAttribute('height')) :
+            (img.naturalHeight || img.height || null),
+        caption,
+        parentContext
+      };
+    })
+    """;
+
+    public const string Forms = """
+    () => [...document.querySelectorAll('form')].map(form => ({
+      action: form.getAttribute('action') || null,
+      method: (form.getAttribute('method') || 'get').toUpperCase(),
+      fields: [...form.querySelectorAll('input, textarea, select')].map(field => {
+        const labels = [...(field.labels ?? [])].map(label => label.textContent.trim()).filter(Boolean);
+        return {
+          name: field.getAttribute('name') || null,
+          type: (field.getAttribute('type') || field.tagName).toLowerCase(),
+          value: field.value ?? null,
+          placeholder: field.getAttribute('placeholder') || null,
+          required: field.required === true,
+          label: labels[0] ?? field.getAttribute('aria-label') ?? null
+        };
+      })
+    }))
+    """;
+
+    public const string Links = """
+    () => [...document.querySelectorAll('a[href]')]
+      .map(anchor => {
+        let href = anchor.getAttribute('href');
+        try {
+          href = new URL(href, document.baseURI).href;
+        } catch {
+          href = null;
+        }
+        return {
+          href,
+          text: anchor.textContent?.trim() || null,
+          title: anchor.getAttribute('title') || null,
+          rel: anchor.getAttribute('rel') || null,
+          target: anchor.getAttribute('target') || null
+        };
+      })
+      .filter(link => link.href)
+    """;
 }

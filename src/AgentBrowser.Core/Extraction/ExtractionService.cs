@@ -59,28 +59,37 @@ public class ExtractionService
     /// <summary>
     /// Extracts image context from the page.
     /// </summary>
-    public async Task<IReadOnlyList<object>> ExtractImagesAsync(string sessionId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ImageInfo>> ExtractImagesAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Image extraction is not implemented yet for session {SessionId}", sessionId);
-        return Array.Empty<object>();
+        var json = await _browserManager
+            .EvaluateJsonFunctionAsync(sessionId, ExtractionScripts.Images, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        return Deserialize<ImageInfo[]>(json) ?? Array.Empty<ImageInfo>();
     }
 
     /// <summary>
     /// Extracts forms from the page.
     /// </summary>
-    public async Task<IReadOnlyList<object>> ExtractFormsAsync(string sessionId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<FormInfo>> ExtractFormsAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Form extraction is not implemented yet for session {SessionId}", sessionId);
-        return Array.Empty<object>();
+        var json = await _browserManager
+            .EvaluateJsonFunctionAsync(sessionId, ExtractionScripts.Forms, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        return Deserialize<FormInfo[]>(json) ?? Array.Empty<FormInfo>();
     }
 
     /// <summary>
     /// Extracts links from the page.
     /// </summary>
-    public async Task<IReadOnlyList<object>> ExtractLinksAsync(string sessionId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<LinkInfo>> ExtractLinksAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Link extraction is not implemented yet for session {SessionId}", sessionId);
-        return Array.Empty<object>();
+        var json = await _browserManager
+            .EvaluateJsonFunctionAsync(sessionId, ExtractionScripts.Links, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        return Deserialize<LinkInfo[]>(json) ?? Array.Empty<LinkInfo>();
     }
 
     private static T? Deserialize<T>(string json)
