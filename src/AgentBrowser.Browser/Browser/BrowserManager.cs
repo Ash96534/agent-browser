@@ -7,6 +7,7 @@ using PuppeteerSharp;
 using AgentBrowserNavigationException = AgentBrowser.Shared.Exceptions.NavigationException;
 using AgentBrowserScriptExecutionException = AgentBrowser.Shared.Exceptions.ScriptExecutionException;
 using AgentBrowserSelectorException = AgentBrowser.Shared.Exceptions.SelectorException;
+using AgentBrowserScreenshotType = AgentBrowser.Shared.Models.ScreenshotType;
 
 namespace AgentBrowser.Browser.Browser;
 
@@ -279,8 +280,76 @@ public sealed class BrowserManager : IBrowserManager
     }
 
     /// <inheritdoc />
-    public Task<string> ScreenshotAsync(string sessionId, string tabId, object options)
-        => throw new NotSupportedException("Screenshots are implemented in Task 6.");
+    public async Task<byte[]> ScreenshotAsync(
+        string sessionId,
+        AgentBrowser.Shared.Models.ScreenshotOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        var format = ParseScreenshotFormat(options.Format);
+        var isElement = options.Type == AgentBrowserScreenshotType.Element;
+        var fullPage = options.Type == AgentBrowserScreenshotType.FullPage || options.FullPage;
+
+        if (isElement && string.IsNullOrWhiteSpace(options.Selector))
+        {
+            throw new ArgumentException("Selector is required for element screenshots.", nameof(options));
+        }
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                if (isElement)
+                {
+                    var element = await handle.Page.QuerySelectorAsync(options.Selector!)
+                        .ConfigureAwait(false);
+                    if (element is null)
+                    {
+                        throw new AgentBrowserSelectorException(
+                            $"No element matches '{options.Selector}'.",
+                            new ArgumentException("Selector not found.", nameof(options)));
+                    }
+
+                    return await element.ScreenshotDataAsync(new ElementScreenshotOptions
+                    {
+                        Type = format,
+                        Quality = format == PuppeteerSharp.ScreenshotType.Png ? null : options.Quality
+                    }).ConfigureAwait(false);
+                }
+
+                return await handle.Page.ScreenshotDataAsync(new PuppeteerSharp.ScreenshotOptions
+                {
+                    Type = format,
+                    FullPage = fullPage,
+                    Quality = format == PuppeteerSharp.ScreenshotType.Png ? null : options.Quality
+                }).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (AgentBrowserSelectorException)
+            {
+                throw;
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new AgentBrowserScriptExecutionException(
+                    $"Screenshot capture failed: {ex.Message}", ex);
+            }
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
 
     /// <inheritdoc />
     public async Task<T> EvaluateExpressionAsync<T>(
@@ -466,6 +535,16 @@ public sealed class BrowserManager : IBrowserManager
         1 => PuppeteerSharp.Input.MouseButton.Middle,
         2 => PuppeteerSharp.Input.MouseButton.Right,
         _ => PuppeteerSharp.Input.MouseButton.Left
+    };
+
+    private static PuppeteerSharp.ScreenshotType ParseScreenshotFormat(string? format) => format?.ToLowerInvariant() switch
+    {
+        "png" or null or "" => PuppeteerSharp.ScreenshotType.Png,
+        "jpeg" or "jpg" => PuppeteerSharp.ScreenshotType.Jpeg,
+        "webp" => PuppeteerSharp.ScreenshotType.Webp,
+        _ => throw new ArgumentException(
+            $"Unsupported screenshot format '{format}'. Use png, jpeg, jpg, or webp.",
+            nameof(format))
     };
 
     private SessionHandle GetHandle(string sessionId)

@@ -63,6 +63,8 @@ public interface IBrowserManager : IAsyncDisposable
     /// </summary>
     Task WaitForSelectorAsync(string sessionId, string selector, int timeout, CancellationToken cancellationToken = default);
 
-    // Temporary compatibility member. Task 6 replaces this with a typed method.
-    Task<string> ScreenshotAsync(string sessionId, string tabId, object options);
+    /// <summary>
+    /// Captures a screenshot as image bytes.
+    /// </summary>
+    Task<byte[]> ScreenshotAsync(string sessionId, ScreenshotOptions options, CancellationToken cancellationToken = default);
 }

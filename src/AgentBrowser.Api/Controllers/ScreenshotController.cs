@@ -46,7 +46,7 @@ public class ScreenshotController : ControllerBase
                 Quality = quality
             };
 
-            var result = await _screenshotService.CaptureAsync(sessionId, sessionId, request);
+            var result = await _screenshotService.CaptureAsync(sessionId, request);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -88,7 +88,7 @@ public class ScreenshotController : ControllerBase
                 Quality = quality
             };
 
-            var base64 = await _screenshotService.CaptureBase64Async(sessionId, sessionId, request);
+            var base64 = await _screenshotService.CaptureBase64Async(sessionId, request);
             return Ok(new { base64 = base64 });
         }
         catch (KeyNotFoundException ex)
