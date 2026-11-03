@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using AgentBrowser.Shared.Exceptions;
 using AgentBrowser.Shared.Models;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
@@ -5,230 +7,240 @@ using PuppeteerSharp;
 namespace AgentBrowser.Browser.Browser;
 
 /// <summary>
-/// Implementation of IBrowserManager using PuppeteerSharp
+/// PuppeteerSharp-backed browser session manager.
 /// </summary>
-public class BrowserManager : IBrowserManager, IDisposable
+public sealed class BrowserManager : IBrowserManager
 {
-    private readonly BrowserFetcher _browserFetcher;
-    private readonly Dictionary<string, Session> _sessions;
-    private readonly object _lock = new();
+    private sealed class SessionHandle : IAsyncDisposable
+    {
+        public required Session Session { get; init; }
+        public required IBrowser Browser { get; init; }
+        public required IPage Page { get; init; }
+        public SemaphoreSlim Gate { get; } = new(1, 1);
+
+        public ValueTask DisposeAsync()
+        {
+            Gate.Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private readonly IBrowserEngine _engine;
+    private readonly IBrowserEventSink _eventSink;
     private readonly ILogger<BrowserManager> _logger;
+    private readonly ConcurrentDictionary<string, SessionHandle> _sessions = new();
     private bool _disposed;
 
-    public BrowserManager(ILogger<BrowserManager> logger)
-    {
-        _logger = logger;
-        _sessions = new Dictionary<string, Session>();
-        _browserFetcher = new BrowserFetcher();
-    }
-
     /// <summary>
-    /// Ensures Chromium is available, downloads if necessary
+    /// Creates a browser manager.
     /// </summary>
-    public async Task EnsureBrowserAsync()
+    public BrowserManager(
+        IBrowserEngine engine,
+        IBrowserEventSink eventSink,
+        ILogger<BrowserManager> logger)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(BrowserManager));
-
-        // Download default Chromium revision
-        _logger.LogInformation("Downloading Chromium...");
-        await _browserFetcher.DownloadAsync();
-        _logger.LogInformation("Chromium download complete");
+        _engine = engine ?? throw new ArgumentNullException(nameof(engine));
+        _eventSink = eventSink ?? throw new ArgumentNullException(nameof(eventSink));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<Session> CreateSessionAsync(SessionOptions options)
+    /// <inheritdoc />
+    public async Task<Session> CreateSessionAsync(
+        SessionOptions options,
+        CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(BrowserManager));
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(options);
 
-        var sessionId = Guid.NewGuid().ToString();
-        var createdAt = DateTime.UtcNow;
-
-        // Ensure browser is available
-        await EnsureBrowserAsync();
-
-        // Launch browser
-        var browser = await PuppeteerSharp.Puppeteer.LaunchAsync(new LaunchOptions
+        IBrowser? browser = null;
+        try
         {
-            Headless = options.Headless
-        });
-
-        // Create page
-        var page = await browser.NewPageAsync();
-
-        // Set viewport
-        await page.SetViewportAsync(new ViewPortOptions
-        {
-            Width = options.Viewport?.Width ?? 1920,
-            Height = options.Viewport?.Height ?? 1080
-        });
-
-        // Set user agent
-        if (!string.IsNullOrWhiteSpace(options.UserAgent))
-        {
-            await page.SetUserAgentAsync(options.UserAgent);
-        }
-
-        // Create session
-        var session = new Session
-        {
-            Id = sessionId,
-            CreatedAt = createdAt,
-            LastAccessedAt = createdAt,
-            Status = SessionStatus.Active,
-            Viewport = options.Viewport ?? new Viewport(),
-            UserAgent = options.UserAgent ?? "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            Tabs = new List<Tab>
+            browser = await _engine.LaunchAsync(new LaunchOptions
             {
-                new Tab
-                {
-                    Id = sessionId, // For now, session ID = tab ID
-                    CreatedAt = createdAt,
-                    Status = TabStatus.Loading
-                }
-            }
-        };
+                Headless = options.Headless,
+                Args = options.Args?.ToArray()
+            }, cancellationToken).ConfigureAwait(false);
 
-        lock (_lock)
-        {
-            _sessions[sessionId] = session;
-        }
-
-        _logger.LogInformation("Created session {SessionId}", sessionId);
-
-        return session;
-    }
-
-    public async Task<Session?> GetSessionAsync(string sessionId)
-    {
-        if (_disposed) throw new ObjectDisposedException(nameof(BrowserManager));
-
-        lock (_lock)
-        {
-            if (_sessions.TryGetValue(sessionId, out var session))
+            var page = await browser.NewPageAsync().ConfigureAwait(false);
+            var viewport = options.Viewport ?? new Viewport();
+            await page.SetViewportAsync(new ViewPortOptions
             {
-                session.LastAccessedAt = DateTime.UtcNow;
-                return session;
-            }
-        }
+                Width = viewport.Width,
+                Height = viewport.Height,
+                DeviceScaleFactor = viewport.DeviceScaleFactor,
+                IsMobile = viewport.IsMobile,
+                HasTouch = viewport.HasTouch
+            }).ConfigureAwait(false);
 
-        return null;
+            if (!string.IsNullOrWhiteSpace(options.UserAgent))
+            {
+                await page.SetUserAgentAsync(options.UserAgent).ConfigureAwait(false);
+            }
+
+            var now = DateTime.UtcNow;
+            var sessionId = Guid.NewGuid().ToString("N");
+            var session = new Session
+            {
+                Id = sessionId,
+                CreatedAt = now,
+                LastAccessedAt = now,
+                Status = SessionStatus.Active,
+                Viewport = viewport,
+                UserAgent = options.UserAgent ??
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                Tabs =
+                [
+                    new Tab
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        CreatedAt = now,
+                        Status = TabStatus.Loading
+                    }
+                ]
+            };
+
+            var handle = new SessionHandle
+            {
+                Session = session,
+                Browser = browser,
+                Page = page
+            };
+
+            if (!_sessions.TryAdd(sessionId, handle))
+            {
+                await handle.DisposeAsync().ConfigureAwait(false);
+                await browser.CloseAsync().ConfigureAwait(false);
+                throw new BrowserLaunchException(
+                    "Failed to register the new browser session.",
+                    new InvalidOperationException("Duplicate session ID."));
+            }
+
+            _logger.LogInformation("Created session {SessionId}", sessionId);
+            return session;
+        }
+        catch (OperationCanceledException)
+        {
+            await CloseQuietlyAsync(browser).ConfigureAwait(false);
+            throw;
+        }
+        catch (Exception ex) when (ex is not BrowserException)
+        {
+            await CloseQuietlyAsync(browser).ConfigureAwait(false);
+            throw new BrowserLaunchException(
+                "Failed to launch Chromium. Verify that Chromium can be downloaded and its system dependencies are installed.",
+                ex);
+        }
     }
 
+    /// <inheritdoc />
+    public Task<Session?> GetSessionAsync(string sessionId)
+    {
+        ThrowIfDisposed();
+
+        if (_sessions.TryGetValue(sessionId, out var handle))
+        {
+            handle.Session.LastAccessedAt = DateTime.UtcNow;
+            return Task.FromResult<Session?>(handle.Session);
+        }
+
+        return Task.FromResult<Session?>(null);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<Session>> GetAllSessionsAsync()
+    {
+        ThrowIfDisposed();
+        IReadOnlyList<Session> sessions = _sessions.Values
+            .Select(handle => handle.Session)
+            .ToList();
+        return Task.FromResult(sessions);
+    }
+
+    /// <inheritdoc />
     public async Task<bool> CloseSessionAsync(string sessionId)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(BrowserManager));
+        ThrowIfDisposed();
 
-        Session? session;
-        lock (_lock)
+        if (!_sessions.TryRemove(sessionId, out var handle))
         {
-            if (!_sessions.TryGetValue(sessionId, out session))
-            {
-                return false;
-            }
+            return false;
         }
 
         try
         {
-            // Close browser
-            // Note: In a real implementation, we'd store the browser instance with the session
+            await handle.Browser.CloseAsync().ConfigureAwait(false);
             _logger.LogInformation("Closed session {SessionId}", sessionId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error closing session {SessionId}", sessionId);
-            return false;
+            _logger.LogError(ex, "Error closing browser for session {SessionId}", sessionId);
         }
-
-        lock (_lock)
+        finally
         {
-            _sessions.Remove(sessionId);
+            await handle.DisposeAsync().ConfigureAwait(false);
         }
 
         return true;
     }
 
-    public async Task<IEnumerable<Session>> GetAllSessionsAsync()
-    {
-        if (_disposed) throw new ObjectDisposedException(nameof(BrowserManager));
+    /// <inheritdoc />
+    public Task<object> NavigateAsync(string sessionId, string tabId, string url, object? options = null)
+        => throw new NotSupportedException("Navigation is implemented in Task 4.");
 
-        lock (_lock)
+    /// <inheritdoc />
+    public Task<string> ScreenshotAsync(string sessionId, string tabId, object options)
+        => throw new NotSupportedException("Screenshots are implemented in Task 6.");
+
+    /// <inheritdoc />
+    public Task<object> EvaluateExpressionAsync(string sessionId, string tabId, string script)
+        => throw new NotSupportedException("JavaScript evaluation is implemented in Task 5.");
+
+    /// <inheritdoc />
+    public Task ClickAsync(string sessionId, string tabId, string selector, object? options = null)
+        => throw new NotSupportedException("Click is implemented in Task 5.");
+
+    /// <inheritdoc />
+    public Task TypeAsync(string sessionId, string tabId, string selector, string text, int delay = 0)
+        => throw new NotSupportedException("Type is implemented in Task 5.");
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
         {
-            return _sessions.Values.ToList();
-        }
-    }
-
-    public async Task<object> NavigateAsync(string sessionId, string tabId, string url, object? options = null)
-    {
-        var session = await GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
-
-        // Note: Actual navigation implementation would use the stored browser/page
-        _logger.LogInformation("Navigating session {SessionId} to {Url}", sessionId, url);
-
-        // Update tab URL
-        var tab = session.Tabs.FirstOrDefault(t => t.Id == tabId || t.Id == sessionId);
-        if (tab != null)
-        {
-            tab.Url = url;
-            tab.Status = TabStatus.Loaded;
+            return;
         }
 
-        return new { success = true, url = url };
-    }
-
-    public async Task<string> ScreenshotAsync(string sessionId, string tabId, object options)
-    {
-        var session = await GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
-
-        // Note: Actual screenshot implementation would use the stored browser/page
-        _logger.LogInformation("Taking screenshot of session {SessionId}", sessionId);
-
-        // Return empty base64 for now (would be actual screenshot data)
-        return "";
-    }
-
-    public async Task<object> EvaluateExpressionAsync(string sessionId, string tabId, string script)
-    {
-        var session = await GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
-
-        _logger.LogInformation("Evaluating JS in session {SessionId}", sessionId);
-
-        // Return placeholder result
-        return new { result = "evaluated", script = script };
-    }
-
-    public async Task ClickAsync(string sessionId, string tabId, string selector, object? options = null)
-    {
-        var session = await GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
-
-        _logger.LogInformation("Clicking selector {Selector} in session {SessionId}", selector, sessionId);
-    }
-
-    public async Task TypeAsync(string sessionId, string tabId, string selector, string text, int delay = 0)
-    {
-        var session = await GetSessionAsync(sessionId);
-        if (session == null)
-            throw new KeyNotFoundException($"Session '{sessionId}' not found");
-
-        _logger.LogInformation("Typing text into selector {Selector} in session {SessionId}", selector, sessionId);
-    }
-
-    public void Dispose()
-    {
-        if (_disposed) return;
-
-        _disposed = true;
-
-        // Cleanup all sessions
         foreach (var sessionId in _sessions.Keys.ToList())
         {
-            CloseSessionAsync(sessionId).GetAwaiter().GetResult();
+            await CloseSessionAsync(sessionId).ConfigureAwait(false);
+        }
+
+        _disposed = true;
+    }
+
+    private async Task CloseQuietlyAsync(IBrowser? browser)
+    {
+        if (browser is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await browser.CloseAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to close a browser after a launch error");
+        }
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(BrowserManager));
         }
     }
 }
