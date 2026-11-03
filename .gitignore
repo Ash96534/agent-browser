@@ -21,6 +21,11 @@ build/
 publish/
 .agentbrowser-cache/
 
+# Generated task logs
+task-*.txt
+api-smoke-*.txt
+mcp-*.txt
+
 # NuGet
 packages/
 *.nupkg

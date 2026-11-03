@@ -1,1 +1,0 @@
-[1104/021259.115:ERROR:persistent_histogram_storage.cc(124)] Could not write "SetupMetrics" persistent histograms to file as the storage directory does not exist.
