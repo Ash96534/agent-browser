@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches-ignore: [master]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore AgentBrowser.sln
+      - name: Build
+        run: dotnet build AgentBrowser.sln --no-restore --nologo -warnaserror
+      - name: Unit tests
+        run: dotnet test tests/AgentBrowser.Tests.Unit/AgentBrowser.Tests.Unit.csproj --no-build --nologo
+      - name: API integration tests
+        run: dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --nologo --filter "Category!=Browser&Category!=Mcp"
+      - name: Browser integration tests
+        run: dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --nologo --filter "Category=Browser"
+      - name: MCP integration test
+        run: dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --nologo --filter "Category=Mcp"
+      - name: API health smoke test
+        shell: pwsh
+        run: |
+          $api = Start-Process dotnet -ArgumentList @(
+            "run", "--project", "src/AgentBrowser.Api", "--no-build",
+            "--urls", "http://127.0.0.1:5080"
+          ) -PassThru
+          try {
+            $healthy = $false
+            for ($attempt = 0; $attempt -lt 15; $attempt++) {
+              try {
+                $health = Invoke-RestMethod -Uri "http://127.0.0.1:5080/health" -TimeoutSec 2
+                if ($health.status -eq "healthy") {
+                  $healthy = $true
+                  break
+                }
+              } catch {
+                Start-Sleep -Seconds 2
+              }
+            }
+            if (-not $healthy) {
+              throw "API health check did not become healthy."
+            }
+          } finally {
+            Stop-Process -Id $api.Id -Force -ErrorAction SilentlyContinue
+          }

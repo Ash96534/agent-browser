@@ -44,9 +44,10 @@
 **Rationale:** The repository should not commit Chromium binaries.
 
 **Implementation:**
-- Default cache path on the development machine is `D:\kiro_proj\.agentbrowser-cache`.
+- Default cache path is `.agentbrowser-cache` under the host application's output directory (`AppContext.BaseDirectory`).
 - Set `AGENTBROWSER_BROWSER_CACHE` to override it.
 - Concurrent downloads are guarded by a shared semaphore.
+- The installed Chrome executable path is passed explicitly to PuppeteerSharp.
 
 **Current status:** Verified.
 
