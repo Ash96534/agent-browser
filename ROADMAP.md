@@ -1,144 +1,52 @@
 # AgentBrowser Roadmap
 
-## Phase 1: MVP - Browser Engine Layer [COMPLETED]
+> Status reflects the latest verified branch, not the original ambition.
 
-### Completed
-- [x] Initialize .NET 8 solution structure (`AgentBrowser.sln`)
-- [x] Set up PuppeteerSharp integration (v19.0.0)
-- [x] Basic session management (create, close, list, get by ID)
-- [x] Navigation (GET, POST) with URL and options
-- [x] HTML retrieval
-- [x] Screenshot capture (viewport, full page, element)
-- [x] Basic DOM querying and manipulation
-- [x] REST API server structure ready
-- [x] Core domain models (Session, Tab, Viewport, Cookie, etc.)
-- [x] Request/Response models (NavigateRequest, ClickRequest, etc.)
-- [x] Browser engine layer (IBrowserManager, BrowserManager)
-- [x] Core services (SessionService, NavigationService, DomService, ScreenshotService)
-- [x] Service dependency injection setup
-- [x] TabExtensions for browser operations
-- [x] GitHub repository setup
+## Current: Working MVP
 
-**Status:** All Phase 1 core browser operations implemented and tested
+### Implemented and verified
 
----
+- [x] Chromium session lifecycle
+- [x] Single-tab navigation, HTML, and body text
+- [x] Click, type, wait, and JavaScript execution
+- [x] Viewport, full-page, and element screenshots
+- [x] Extraction of metadata, prices, images, forms, and links
+- [x] WebSocket console, load-complete, and page-error events
+- [x] REST API with consistent error mapping
+- [x] MCP server over stdio using the official C# SDK
+- [x] Unit and integration test coverage
 
-## Phase 2: Core Agent Features [COMPLETED]
+### Explicitly out of scope for the MVP
 
-### Completed
-- [x] WebSocket handler for connection management
-- [x] WebSocket event types (Console, Network, DOM, LoadComplete, Error)
-- [x] WebSocket middleware integration
-- [x] Event streaming infrastructure ready
-- [x] REST API controllers (Session, Navigation, DOM, Screenshot, Health, Extraction)
-
-**Endpoints Added:**
-- Session: `POST`, `GET {id}`, `DELETE {id}`, `GET` (all)
-- Navigation: `POST navigate`, `GET html`, `GET content`
-- DOM: `POST click`, `POST type`, `POST execute`, `GET wait`
-- Screenshot: `GET screenshot`, `GET base64`
-- Extraction: 5 endpoints (metadata, prices, images, forms, links)
-
----
-
-## Phase 3: Extended Data Extraction [COMPLETED]
-
-### Completed
-- [x] Extraction service created
-- [x] Metadata extraction (OG tags, JSON-LD, meta tags)
-- [x] Price extraction (data-price, Schema.org)
-- [x] Image extraction (alt, aria-label, context)
-- [x] Form extraction (fields, labels, validation)
-- [x] Link extraction (href, rel, target)
-- [x] Extraction REST controller with 5 endpoints
-
-**Endpoints:**
-- `GET /session/{id}/extract/metadata`
-- `GET /session/{id}/extract/prices`
-- `GET /session/{id}/extract/images`
-- `GET /session/{id}/extract/forms`
-- `GET /session/{id}/extract/links`
-
----
-
-## Phase 4: Agent Integration [IN PROGRESS]
-
-### In Progress
-- [ ] MCP server implementation (stdio transport)
-- [ ] Agent SDK libraries
-- [ ] Authentication flows
-- [ ] Session persistence
-
-### Next Up
-- [ ] Implement MCP server protocol handler
-- [ ] Create MCP tools (browse_navigate, browse_click, browse_type, etc.)
-- [ ] Implement MCP stdio transport
-- [ ] Create Agent SDK (Python/Node.js)
-- [ ] Add API authentication (API key)
-- [ ] Implement session persistence with SQLite
-
----
-
-## Phase 5: Production Ready [FUTURE]
-
-- [ ] Error handling and recovery
-- [ ] Rate limiting
-- [ ] Resource management
 - [ ] Multi-tab support
-- [ ] CI/CD pipeline
-- [ ] Docker support
-- [ ] Monitoring and logging
-- [ ] Console log streaming (Puppeteer console event)
-- [ ] Network request capture (request interception)
+- [ ] Network interception, request modification, mocking, or blocking
+- [ ] DOM mutation events
+- [ ] Session persistence
+- [ ] API authentication, authorization, and rate limiting
+- [ ] Multi-instance scaling
+- [ ] Docker and PDF generation
+- [ ] License selection
 
----
+## Next priorities
 
-## Current Status
+1. GitHub Actions CI for Windows: build, unit tests, integration tests, browser tests, and MCP test.
+2. Open source readiness: choose a license and make public claims consistent.
+2. Observability: structured logging, request logging, and a resource monitoring endpoint.
+3. Safety: CORS policy, input limits, request size limits, and defensive error responses.
+4. Testing: browser-backed end-to-end tests for API, WebSocket, and MCP tools.
+5. Performance: benchmark navigation and extraction before making performance claims.
+6. Docker: reproducible image with the verified Chromium cache path.
 
-**Phase:** Phase 4 In Progress - MCP Server & Agent SDK Next  
-**Status:** Full API with 15+ endpoints, WebSocket infrastructure, Extraction service
+## Backlog
 
-### What's Working
-- Solution builds without errors
-- Browser engine creates/manages sessions
-- Navigation and screenshot operations available
-- Core services registered via DI
-- Domain models properly structured
-- 15 REST API endpoints:
-  - Session (4 endpoints)
-  - Navigation (3 endpoints)
-  - DOM (4 endpoints)
-  - Screenshot (2 endpoints)
-  - Extraction (5 endpoints)
-- WebSocket handlers ready
-- WebSocket event types defined
+- Multi-tab support.
+- Network interception and blocking.
+- DOM mutation events.
+- Session persistence with SQLite.
+- API keys and rate limiting.
+- OpenAPI documentation and examples.
+- Local browser cache eviction and monitoring.
 
-### What's Next
-- MCP server implementation
-- Agent SDK libraries
-- API authentication
+## Notes
 
----
-
-## Milestones
-
-| Milestone | Date | Status |
-|-----------|------|--------|
-| Project Setup | 2026-10-16 | Complete |
-| Browser Engine Layer | 2026-10-16 | Complete |
-| REST API Controllers | 2026-10-17 | Complete (15 endpoints) |
-| WebSocket Support | 2026-10-17 | Complete (infrastructure) |
-| Extraction Service | 2026-10-17 | Complete (5 endpoints) |
-| MCP Server | 2026-10-18 | In Progress |
-| Agent SDK | 2026-10-19 | Scheduled |
-| Authentication | 2026-10-20 | Planned |
-| CI/CD Pipeline | 2026-10-22 | Planned |
-| Production Ready | 2026-10-25 | Planned |
-
----
-
-## GitHub Progress
-
-**Repository:** [https://github.com/Ash96534/agent-browser](https://github.com/Ash96534/agent-browser)
-
-**Current Commit:** e128db1 (docs: Update SPEC.md with Phase 2/3 completion status)
+The original plan described a broader vision. That vision is not implemented, and this roadmap is not a commitment to build it in any particular order.

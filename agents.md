@@ -8,12 +8,15 @@
 
 ## AgentBrowser Project Specifics
 
-- All code must be written in C# (.NET 8) using PuppeteerSharp for browser automation
-- Follow layered architecture: Shared → Browser → Core → API
+- All code must be written in C# 13 on .NET 10 (`net10.0`) using PuppeteerSharp 19.0.0 for browser automation
+- Follow layered architecture: Shared → Browser → Core → API / MCP
 - All domain models go in `AgentBrowser.Shared/Models/`
 - All browser engine code goes in `AgentBrowser.Browser/`
 - All business logic goes in `AgentBrowser.Core/`
 - All API code goes in `AgentBrowser.Api/`
+- All MCP tools go in `AgentBrowser.MCP/Tools/`
+- Current scope is one active page per session. Do not claim multi-tab, network interception, DOM mutation streaming, persistence, authentication, Docker, or PDF support.
+- Set `AGENTBROWSER_BROWSER_CACHE` to override the Chromium cache path.
 
 ## General Behavior
 
@@ -58,3 +61,10 @@
 - Use semantic commit messages: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`
 - Keep PR titles under 70 characters
 - Commit message format: `<type>: <description>`
+
+## Verification
+
+- `dotnet build AgentBrowser.sln --nologo -warnaserror`
+- `dotnet test AgentBrowser.sln --no-build --nologo`
+- Browser tests require Chromium; they run against local `data:` URLs only.
+- Record the commands and results in `docs/VERIFICATION.md`.
