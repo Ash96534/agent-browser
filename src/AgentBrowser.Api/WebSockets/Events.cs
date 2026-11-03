@@ -40,7 +40,7 @@ public class NetworkEvent : WebSocketMessage
     public string Method { get; set; } = string.Empty;
     public int Status { get; set; }
     public string ResourceType { get; set; } = string.Empty;
-    public long Timestamp { get; set; }
+    public new long Timestamp { get; set; }
 }
 
 /// <summary>
@@ -54,7 +54,7 @@ public class DomEvent : WebSocketMessage
     }
 
     public string Selector { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty; // added, removed, modified
+    public new string Type { get; set; } = string.Empty; // added, removed, modified
     public string? Content { get; set; }
 }
 

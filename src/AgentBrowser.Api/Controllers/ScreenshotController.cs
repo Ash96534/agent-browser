@@ -1,4 +1,5 @@
 using AgentBrowser.Core.Services;
+using AgentBrowser.Shared.Models;
 using AgentBrowser.Shared.Models.Requests;
 using AgentBrowser.Shared.Models.Responses;
 using Microsoft.AspNetCore.Mvc;

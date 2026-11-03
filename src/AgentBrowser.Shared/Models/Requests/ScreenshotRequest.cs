@@ -8,10 +8,3 @@ public class ScreenshotRequest
     public string Format { get; set; } = "png";
     public int? Quality { get; set; }
 }
-
-public enum ScreenshotType
-{
-    Viewport,
-    Element,
-    FullPage
-}
