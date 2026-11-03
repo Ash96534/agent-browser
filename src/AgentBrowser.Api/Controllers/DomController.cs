@@ -26,7 +26,7 @@ public class DomController : ControllerBase
     {
         try
         {
-            await _domService.ClickAsync(sessionId, sessionId, request);
+            await _domService.ClickAsync(sessionId, request);
             return Ok(new { success = true });
         }
         catch (KeyNotFoundException ex)
@@ -50,7 +50,7 @@ public class DomController : ControllerBase
     {
         try
         {
-            await _domService.TypeAsync(sessionId, sessionId, request);
+            await _domService.TypeAsync(sessionId, request);
             return Ok(new { success = true });
         }
         catch (KeyNotFoundException ex)
@@ -74,7 +74,7 @@ public class DomController : ControllerBase
     {
         try
         {
-            var result = await _domService.ExecuteJsAsync<T>(sessionId, sessionId, request);
+            var result = await _domService.ExecuteJsAsync<T>(sessionId, request);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -99,7 +99,7 @@ public class DomController : ControllerBase
     {
         try
         {
-            await _domService.WaitForSelectorAsync(sessionId, sessionId, selector, timeout);
+            await _domService.WaitForSelectorAsync(sessionId, selector, timeout);
             return Ok(new { success = true });
         }
         catch (KeyNotFoundException ex)

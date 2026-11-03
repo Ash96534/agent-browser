@@ -5,6 +5,8 @@ using AgentBrowser.Shared.Models.Requests;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using AgentBrowserNavigationException = AgentBrowser.Shared.Exceptions.NavigationException;
+using AgentBrowserScriptExecutionException = AgentBrowser.Shared.Exceptions.ScriptExecutionException;
+using AgentBrowserSelectorException = AgentBrowser.Shared.Exceptions.SelectorException;
 
 namespace AgentBrowser.Browser.Browser;
 
@@ -281,16 +283,158 @@ public sealed class BrowserManager : IBrowserManager
         => throw new NotSupportedException("Screenshots are implemented in Task 6.");
 
     /// <inheritdoc />
-    public Task<object> EvaluateExpressionAsync(string sessionId, string tabId, string script)
-        => throw new NotSupportedException("JavaScript evaluation is implemented in Task 5.");
+    public async Task<T> EvaluateExpressionAsync<T>(
+        string sessionId,
+        string script,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(script);
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                return await handle.Page.EvaluateExpressionAsync<T>(script).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new AgentBrowserScriptExecutionException(
+                    $"JavaScript evaluation failed: {ex.Message}", ex);
+            }
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
 
     /// <inheritdoc />
-    public Task ClickAsync(string sessionId, string tabId, string selector, object? options = null)
-        => throw new NotSupportedException("Click is implemented in Task 5.");
+    public async Task ClickAsync(
+        string sessionId,
+        string selector,
+        ClickOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentException.ThrowIfNullOrEmpty(selector);
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                await handle.Page.ClickAsync(selector, new PuppeteerSharp.Input.ClickOptions
+                {
+                    Delay = options.Delay,
+                    Button = MapMouseButton(options.Button),
+                    Count = options.ClickCount
+                }).ConfigureAwait(false);
+
+                MarkTabInteractive(handle);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new AgentBrowserSelectorException(
+                    $"Clicking '{selector}' failed: {ex.Message}", ex);
+            }
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
 
     /// <inheritdoc />
-    public Task TypeAsync(string sessionId, string tabId, string selector, string text, int delay = 0)
-        => throw new NotSupportedException("Type is implemented in Task 5.");
+    public async Task TypeAsync(
+        string sessionId,
+        string selector,
+        string text,
+        int delay,
+        bool clearFirst,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(selector);
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                if (clearFirst)
+                {
+                    await handle.Page.EvaluateFunctionAsync<object>(
+                        "selector => { const el = document.querySelector(selector); if (el) el.value = ''; }",
+                        selector).ConfigureAwait(false);
+                }
+
+                await handle.Page.TypeAsync(selector, text ?? string.Empty,
+                    new PuppeteerSharp.Input.TypeOptions { Delay = delay })
+                    .ConfigureAwait(false);
+
+                MarkTabInteractive(handle);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new AgentBrowserSelectorException(
+                    $"Typing into '{selector}' failed: {ex.Message}", ex);
+            }
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task WaitForSelectorAsync(
+        string sessionId,
+        string selector,
+        int timeout,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(selector);
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                await handle.Page.WaitForSelectorAsync(selector,
+                    new WaitForSelectorOptions { Timeout = timeout })
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new AgentBrowserSelectorException(
+                    $"Waiting for '{selector}' failed: {ex.Message}", ex);
+            }
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
@@ -307,6 +451,22 @@ public sealed class BrowserManager : IBrowserManager
 
         _disposed = true;
     }
+
+    private static void MarkTabInteractive(SessionHandle handle)
+    {
+        handle.Session.LastAccessedAt = DateTime.UtcNow;
+        if (handle.Session.Tabs.Count > 0)
+        {
+            handle.Session.Tabs[0].Status = TabStatus.Loaded;
+        }
+    }
+
+    private static PuppeteerSharp.Input.MouseButton MapMouseButton(int button) => button switch
+    {
+        1 => PuppeteerSharp.Input.MouseButton.Middle,
+        2 => PuppeteerSharp.Input.MouseButton.Right,
+        _ => PuppeteerSharp.Input.MouseButton.Left
+    };
 
     private SessionHandle GetHandle(string sessionId)
     {

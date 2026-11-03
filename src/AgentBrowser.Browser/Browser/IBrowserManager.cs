@@ -43,9 +43,26 @@ public interface IBrowserManager : IAsyncDisposable
     /// </summary>
     Task<string> GetContentTextAsync(string sessionId, CancellationToken cancellationToken = default);
 
-    // Temporary compatibility members. Tasks 5-6 replace these with typed methods.
+    /// <summary>
+    /// Evaluates a JavaScript expression and deserializes the result.
+    /// </summary>
+    Task<T> EvaluateExpressionAsync<T>(string sessionId, string script, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Clicks an element.
+    /// </summary>
+    Task ClickAsync(string sessionId, string selector, ClickOptions options, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Types text into an element.
+    /// </summary>
+    Task TypeAsync(string sessionId, string selector, string text, int delay, bool clearFirst, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Waits for a selector to appear.
+    /// </summary>
+    Task WaitForSelectorAsync(string sessionId, string selector, int timeout, CancellationToken cancellationToken = default);
+
+    // Temporary compatibility member. Task 6 replaces this with a typed method.
     Task<string> ScreenshotAsync(string sessionId, string tabId, object options);
-    Task<object> EvaluateExpressionAsync(string sessionId, string tabId, string script);
-    Task ClickAsync(string sessionId, string tabId, string selector, object? options = null);
-    Task TypeAsync(string sessionId, string tabId, string selector, string text, int delay = 0);
 }
