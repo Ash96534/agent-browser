@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using AgentBrowser.Shared.Exceptions;
 using AgentBrowser.Shared.Models;
+using AgentBrowser.Shared.Models.Requests;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
+using AgentBrowserNavigationException = AgentBrowser.Shared.Exceptions.NavigationException;
 
 namespace AgentBrowser.Browser.Browser;
 
@@ -184,8 +186,95 @@ public sealed class BrowserManager : IBrowserManager
     }
 
     /// <inheritdoc />
-    public Task<object> NavigateAsync(string sessionId, string tabId, string url, object? options = null)
-        => throw new NotSupportedException("Navigation is implemented in Task 4.");
+    public async Task<PageNavigationResult> NavigateAsync(
+        string sessionId,
+        NavigateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!Uri.TryCreate(request.Url, UriKind.Absolute, out _))
+        {
+            throw new AgentBrowserNavigationException(
+                $"Invalid URL '{request.Url}'. An absolute URL is required.",
+                new ArgumentException("Invalid URL.", nameof(request)));
+        }
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                await handle.Page.GoToAsync(request.Url, new NavigationOptions
+                {
+                    Timeout = request.Timeout ?? 30000,
+                    WaitUntil = [MapWaitUntil(request.WaitUntil)]
+                }).ConfigureAwait(false);
+
+                var title = await handle.Page.GetTitleAsync().ConfigureAwait(false);
+                var finalUrl = handle.Page.Url;
+
+                var tab = handle.Session.Tabs[0];
+                tab.Url = finalUrl;
+                tab.Title = title;
+                tab.Status = TabStatus.Loaded;
+                handle.Session.Status = SessionStatus.Active;
+                handle.Session.LastAccessedAt = DateTime.UtcNow;
+
+                return new PageNavigationResult(finalUrl, title);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (AgentBrowserNavigationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new AgentBrowserNavigationException(
+                    $"Navigation to '{request.Url}' failed: {ex.Message}", ex);
+            }
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GetHtmlAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await handle.Page.GetContentAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GetContentTextAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await handle.Page
+                .EvaluateExpressionAsync<string>("document.body?.innerText ?? ''")
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
 
     /// <inheritdoc />
     public Task<string> ScreenshotAsync(string sessionId, string tabId, object options)
@@ -218,6 +307,25 @@ public sealed class BrowserManager : IBrowserManager
 
         _disposed = true;
     }
+
+    private SessionHandle GetHandle(string sessionId)
+    {
+        if (!_sessions.TryGetValue(sessionId, out var handle))
+        {
+            throw new SessionNotFoundException(sessionId);
+        }
+
+        handle.Session.LastAccessedAt = DateTime.UtcNow;
+        return handle;
+    }
+
+    private static WaitUntilNavigation MapWaitUntil(WaitUntil? waitUntil) => waitUntil switch
+    {
+        WaitUntil.DOMContentLoaded => WaitUntilNavigation.DOMContentLoaded,
+        WaitUntil.NetworkIdle0 => WaitUntilNavigation.Networkidle0,
+        WaitUntil.NetworkIdle2 => WaitUntilNavigation.Networkidle2,
+        _ => WaitUntilNavigation.Load
+    };
 
     private async Task CloseQuietlyAsync(IBrowser? browser)
     {

@@ -1,4 +1,5 @@
 using AgentBrowser.Shared.Models;
+using AgentBrowser.Shared.Models.Requests;
 
 namespace AgentBrowser.Browser.Browser;
 
@@ -27,8 +28,22 @@ public interface IBrowserManager : IAsyncDisposable
     /// </summary>
     Task<bool> CloseSessionAsync(string sessionId);
 
-    // Temporary compatibility members. Tasks 4-6 replace these with typed methods.
-    Task<object> NavigateAsync(string sessionId, string tabId, string url, object? options = null);
+    /// <summary>
+    /// Navigates a session to a URL.
+    /// </summary>
+    Task<PageNavigationResult> NavigateAsync(string sessionId, NavigateRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the rendered page HTML.
+    /// </summary>
+    Task<string> GetHtmlAsync(string sessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the visible body text.
+    /// </summary>
+    Task<string> GetContentTextAsync(string sessionId, CancellationToken cancellationToken = default);
+
+    // Temporary compatibility members. Tasks 5-6 replace these with typed methods.
     Task<string> ScreenshotAsync(string sessionId, string tabId, object options);
     Task<object> EvaluateExpressionAsync(string sessionId, string tabId, string script);
     Task ClickAsync(string sessionId, string tabId, string selector, object? options = null);

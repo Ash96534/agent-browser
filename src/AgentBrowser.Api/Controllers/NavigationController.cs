@@ -27,7 +27,7 @@ public class NavigationController : ControllerBase
     {
         try
         {
-            var result = await _navigationService.NavigateAsync(sessionId, sessionId, request);
+            var result = await _navigationService.NavigateAsync(sessionId, request);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -50,7 +50,7 @@ public class NavigationController : ControllerBase
     {
         try
         {
-            var result = await _navigationService.GetHtmlAsync(sessionId, sessionId);
+            var result = await _navigationService.GetHtmlAsync(sessionId);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -73,7 +73,7 @@ public class NavigationController : ControllerBase
     {
         try
         {
-            var result = await _navigationService.GetContentAsync(sessionId, sessionId);
+            var result = await _navigationService.GetContentAsync(sessionId);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
