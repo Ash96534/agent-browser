@@ -1,4 +1,5 @@
 using AgentBrowser.Browser.Browser;
+using AgentBrowser.Shared.Models;
 using AgentBrowser.Shared.Models.Requests;
 using AgentBrowser.Shared.Models.Responses;
 using Microsoft.Extensions.Logging;
@@ -47,14 +48,21 @@ public sealed class NavigationService : INavigationService
     public async Task<HtmlResponse> GetHtmlAsync(string sessionId, CancellationToken cancellationToken = default)
     {
         var html = await _browserManager.GetHtmlAsync(sessionId, cancellationToken).ConfigureAwait(false);
-        return new HtmlResponse { Html = html };
+        return new HtmlResponse { Html = html, Format = "html" };
     }
 
-    /// <inheritdoc />
-    public async Task<HtmlResponse> GetContentAsync(string sessionId, CancellationToken cancellationToken = default)
+    private static string FormatName(ContentFormat format) => format switch
     {
-        var text = await _browserManager.GetContentTextAsync(sessionId, cancellationToken)
+        ContentFormat.Html => "html",
+        ContentFormat.Markdown => "markdown",
+        _ => "text"
+    };
+
+    /// <inheritdoc />
+    public async Task<HtmlResponse> GetContentAsync(string sessionId, ContentFormat format = ContentFormat.Text, CancellationToken cancellationToken = default)
+    {
+        var content = await _browserManager.GetContentAsync(sessionId, format, cancellationToken)
             .ConfigureAwait(false);
-        return new HtmlResponse { Html = text };
+        return new HtmlResponse { Html = content, Format = FormatName(format) };
     }
 }

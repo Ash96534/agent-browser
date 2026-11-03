@@ -305,9 +305,30 @@ public sealed class BrowserManager : IBrowserManager
         await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            return await handle.Page
-                .EvaluateExpressionAsync<string>("document.body?.innerText ?? ''")
-                .ConfigureAwait(false);
+            return await GetBodyTextAsync(handle).ConfigureAwait(false);
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GetContentAsync(string sessionId, ContentFormat format, CancellationToken cancellationToken = default)
+    {
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return format switch
+            {
+                ContentFormat.Html => await handle.Page.GetContentAsync().ConfigureAwait(false),
+                ContentFormat.Markdown => await handle.Page
+                    .EvaluateExpressionAsync<string>(MarkdownScript)
+                    .ConfigureAwait(false),
+                ContentFormat.Text => await GetBodyTextAsync(handle).ConfigureAwait(false),
+                _ => throw new ArgumentException($"Unsupported content format '{format}'.", nameof(format))
+            };
         }
         finally
         {
@@ -627,6 +648,32 @@ public sealed class BrowserManager : IBrowserManager
         {
             _logger.LogWarning(ex, "Failed to publish browser event {EventType}", browserEvent.GetType().Name);
         }
+    }
+
+    private const string MarkdownScript = """
+        (() => {
+            const chunks = [];
+            const clean = value => (value || '').replace(/\s+/g, ' ').trim();
+            for (const element of document.body?.querySelectorAll('h1, h2, h3, p, li, a') ?? []) {
+                const tag = element.tagName.toLowerCase();
+                const text = clean(element.textContent);
+                if (!text) continue;
+                if (/^h[1-3]$/.test(tag)) chunks.push('#'.repeat(Number(tag.slice(1))) + ' ' + text);
+                else if (tag === 'li') chunks.push('- ' + text);
+                else if (tag === 'a') {
+                    const href = element.href;
+                    if (href) chunks.push('[' + text + '](' + href + ')');
+                } else chunks.push(text);
+            }
+            return chunks.join('\n\n');
+        })()
+        """;
+
+    private static async Task<string> GetBodyTextAsync(SessionHandle handle)
+    {
+        return await handle.Page
+            .EvaluateExpressionAsync<string>("document.body?.innerText ?? ''")
+            .ConfigureAwait(false);
     }
 
     private static void MarkTabInteractive(SessionHandle handle)

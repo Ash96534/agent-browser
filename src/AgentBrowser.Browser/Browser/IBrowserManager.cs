@@ -44,9 +44,14 @@ public interface IBrowserManager : IAsyncDisposable
     Task<string> GetHtmlAsync(string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the visible body text.
+    /// Gets visible body text.
     /// </summary>
     Task<string> GetContentTextAsync(string sessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets page content in the requested format.
+    /// </summary>
+    Task<string> GetContentAsync(string sessionId, ContentFormat format, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Evaluates a JavaScript expression and deserializes the result.

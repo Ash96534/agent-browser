@@ -1,4 +1,5 @@
 using AgentBrowser.Core.Services;
+using AgentBrowser.Shared.Models;
 using AgentBrowser.Shared.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
 
@@ -46,9 +47,11 @@ public sealed class NavigationController : ControllerBase
     /// Gets the visible body text.
     /// </summary>
     [HttpGet("/session/{sessionId}/content")]
-    public async Task<ActionResult> GetContent(string sessionId, CancellationToken cancellationToken)
+    public async Task<ActionResult> GetContent(string sessionId, [FromQuery] string format = "text",
+        CancellationToken cancellationToken = default)
     {
-        var result = await _navigationService.GetContentAsync(sessionId, cancellationToken);
+        var result = await _navigationService.GetContentAsync(sessionId,
+            ContentFormatParser.ParseOrDefault(format), cancellationToken);
         return Ok(result);
     }
 }

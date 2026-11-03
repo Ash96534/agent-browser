@@ -80,7 +80,7 @@ public class NavigationApiTests
     {
         using var factory = new ApiFactory();
         factory.Manager
-            .Setup(m => m.GetContentTextAsync("session-1", It.IsAny<CancellationToken>()))
+            .Setup(m => m.GetContentAsync("session-1", ContentFormat.Text, It.IsAny<CancellationToken>()))
             .ReturnsAsync("visible text");
 
         using var client = factory.CreateClient();

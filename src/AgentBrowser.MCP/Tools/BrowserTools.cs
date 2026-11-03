@@ -214,10 +214,11 @@ public static class BrowserTools
     public static async Task<IReadOnlyList<PriceInfo>> GetPrices(
         IServiceProvider services,
         [Description("The session ID returned by browse_create_session.")] string sessionId,
+        [Description("Maximum number of prices to return.")] int? max = null,
         CancellationToken cancellationToken = default)
     {
         var extractionService = services.GetRequiredService<ExtractionService>();
-        return await extractionService.ExtractPricesAsync(sessionId, cancellationToken)
+        return await extractionService.ExtractPricesAsync(sessionId, max, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -229,10 +230,11 @@ public static class BrowserTools
     public static async Task<IReadOnlyList<ImageInfo>> GetImages(
         IServiceProvider services,
         [Description("The session ID returned by browse_create_session.")] string sessionId,
+        [Description("Maximum number of images to return.")] int? max = null,
         CancellationToken cancellationToken = default)
     {
         var extractionService = services.GetRequiredService<ExtractionService>();
-        return await extractionService.ExtractImagesAsync(sessionId, cancellationToken)
+        return await extractionService.ExtractImagesAsync(sessionId, max, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -244,10 +246,11 @@ public static class BrowserTools
     public static async Task<IReadOnlyList<FormInfo>> GetForms(
         IServiceProvider services,
         [Description("The session ID returned by browse_create_session.")] string sessionId,
+        [Description("Maximum number of forms to return.")] int? max = null,
         CancellationToken cancellationToken = default)
     {
         var extractionService = services.GetRequiredService<ExtractionService>();
-        return await extractionService.ExtractFormsAsync(sessionId, cancellationToken)
+        return await extractionService.ExtractFormsAsync(sessionId, max, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -259,10 +262,12 @@ public static class BrowserTools
     public static async Task<IReadOnlyList<LinkInfo>> GetLinks(
         IServiceProvider services,
         [Description("The session ID returned by browse_create_session.")] string sessionId,
+        [Description("Maximum number of links to return.")] int? max = null,
+        [Description("Only return links on the same origin as the current page.")] bool sameOrigin = false,
         CancellationToken cancellationToken = default)
     {
         var extractionService = services.GetRequiredService<ExtractionService>();
-        return await extractionService.ExtractLinksAsync(sessionId, cancellationToken)
+        return await extractionService.ExtractLinksAsync(sessionId, max, sameOrigin, cancellationToken)
             .ConfigureAwait(false);
     }
 

@@ -1,3 +1,4 @@
+using AgentBrowser.Shared.Models;
 using AgentBrowser.Shared.Models.Requests;
 using AgentBrowser.Shared.Models.Responses;
 
@@ -19,7 +20,7 @@ public interface INavigationService
     Task<HtmlResponse> GetHtmlAsync(string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the visible body text.
+    /// Gets page content in the requested format.
     /// </summary>
-    Task<HtmlResponse> GetContentAsync(string sessionId, CancellationToken cancellationToken = default);
+    Task<HtmlResponse> GetContentAsync(string sessionId, ContentFormat format = ContentFormat.Text, CancellationToken cancellationToken = default);
 }

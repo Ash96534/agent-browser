@@ -43,7 +43,7 @@ public class NavigationServiceTests
     public async Task GetContentAsync_ReturnsBodyText()
     {
         var manager = new Mock<IBrowserManager>();
-        manager.Setup(m => m.GetContentTextAsync("session-1", It.IsAny<CancellationToken>()))
+        manager.Setup(m => m.GetContentAsync("session-1", ContentFormat.Text, It.IsAny<CancellationToken>()))
             .ReturnsAsync("body text");
 
         var service = new NavigationService(manager.Object, NullLogger<NavigationService>.Instance);
