@@ -41,7 +41,7 @@ public sealed class ExceptionHandlingMiddleware
                 throw;
             }
 
-            var (statusCode, message) = MapException(ex);
+            var (statusCode, kind, message, retryable) = MapException(ex);
             if (statusCode >= 500)
             {
                 _logger.LogError(ex, "Request failed with status {StatusCode}", statusCode);
@@ -56,22 +56,26 @@ public sealed class ExceptionHandlingMiddleware
 
             await context.Response.WriteAsJsonAsync(new ErrorResponse
             {
+                Kind = kind.ToString(),
                 Error = message,
                 Message = message,
+                TraceId = context.Items[AgentBrowser.Shared.Models.ApiContract.CorrelationIdHeader] as string,
+                Retryable = retryable,
                 StackTrace = _environment.IsDevelopment() ? ex.ToString() : null
             });
         }
     }
 
-    private static (int StatusCode, string Message) MapException(Exception ex) => ex switch
+    private static (int StatusCode, ErrorKind Kind, string Message, bool Retryable) MapException(Exception ex) => ex switch
     {
-        SessionNotFoundException => (StatusCodes.Status404NotFound, ex.Message),
-        KeyNotFoundException => (StatusCodes.Status404NotFound, ex.Message),
-        BrowserLaunchException => (StatusCodes.Status503ServiceUnavailable, ex.Message),
-        NavigationException => (StatusCodes.Status400BadRequest, ex.Message),
-        SelectorException => (StatusCodes.Status400BadRequest, ex.Message),
-        ScriptExecutionException => (StatusCodes.Status400BadRequest, ex.Message),
-        ArgumentException => (StatusCodes.Status400BadRequest, ex.Message),
-        _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
+        SessionNotFoundException => (StatusCodes.Status404NotFound, ErrorKind.SessionNotFound, ex.Message, false),
+        KeyNotFoundException => (StatusCodes.Status404NotFound, ErrorKind.SessionNotFound, ex.Message, false),
+        BrowserLaunchException => (StatusCodes.Status503ServiceUnavailable, ErrorKind.BrowserLaunchFailure, ex.Message, true),
+        NavigationException => (StatusCodes.Status400BadRequest, ErrorKind.NavigationFailure, ex.Message, false),
+        SelectorException => (StatusCodes.Status400BadRequest, ErrorKind.SelectorNotFound, ex.Message, false),
+        ScriptExecutionException => (StatusCodes.Status400BadRequest, ErrorKind.ScriptFailure, ex.Message, false),
+        ArgumentException => (StatusCodes.Status400BadRequest, ErrorKind.InvalidRequest, ex.Message, false),
+        TimeoutException => (StatusCodes.Status408RequestTimeout, ErrorKind.Timeout, ex.Message, true),
+        _ => (StatusCodes.Status500InternalServerError, ErrorKind.Unknown, "An unexpected error occurred.", false)
     };
 }

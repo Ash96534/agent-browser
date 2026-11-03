@@ -24,6 +24,11 @@ public interface IBrowserManager : IAsyncDisposable
     Task<IReadOnlyList<Session>> GetAllSessionsAsync();
 
     /// <summary>
+    /// Gets service diagnostics without launching a new browser.
+    /// </summary>
+    Task<DiagnosticsResponse> GetDiagnosticsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Closes a session and its browser if it exists.
     /// </summary>
     Task<bool> CloseSessionAsync(string sessionId);

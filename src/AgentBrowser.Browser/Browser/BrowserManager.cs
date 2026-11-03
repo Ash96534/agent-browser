@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.IO;
 using System.Text.Json;
 using AgentBrowser.Shared.Exceptions;
 using AgentBrowser.Shared.Models;
@@ -17,6 +18,8 @@ namespace AgentBrowser.Browser.Browser;
 /// </summary>
 public sealed class BrowserManager : IBrowserManager
 {
+    private static readonly DateTimeOffset ProcessStartedAt = DateTimeOffset.UtcNow;
+
     private sealed class SessionHandle : IAsyncDisposable
     {
         public required Session Session { get; init; }
@@ -165,6 +168,24 @@ public sealed class BrowserManager : IBrowserManager
     }
 
     /// <inheritdoc />
+    public async Task<DiagnosticsResponse> GetDiagnosticsAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        var path = await _engine.ResolveChromiumExecutablePathAsync(cancellationToken).ConfigureAwait(false);
+        var sessions = _sessions.Values.Select(handle => handle.Session.Id).OrderBy(id => id, StringComparer.Ordinal).ToList();
+
+        return new DiagnosticsResponse
+        {
+            UptimeSeconds = (DateTimeOffset.UtcNow - ProcessStartedAt).TotalSeconds,
+            SessionCount = sessions.Count,
+            ActiveSessionIds = sessions,
+            ChromiumExecutablePath = path,
+            IsChromiumAvailable = !string.IsNullOrWhiteSpace(path) && File.Exists(path)
+        };
+    }
+
+    /// <inheritdoc />
     public async Task<bool> CloseSessionAsync(string sessionId)
     {
         ThrowIfDisposed();
@@ -199,11 +220,23 @@ public sealed class BrowserManager : IBrowserManager
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!Uri.TryCreate(request.Url, UriKind.Absolute, out _))
+        if (!Uri.TryCreate(request.Url, UriKind.Absolute, out var uri))
         {
             throw new AgentBrowserNavigationException(
                 $"Invalid URL '{request.Url}'. An absolute URL is required.",
                 new ArgumentException("Invalid URL.", nameof(request)));
+        }
+
+        var blockPrivateNetworks = bool.TryParse(
+            Environment.GetEnvironmentVariable("AGENTBROWSER_BLOCK_PRIVATE_NETWORKS"),
+            out var parsedBlock) && parsedBlock;
+
+        if (!SafetyPolicy.IsAllowedNavigation(uri, out var safetyReason,
+            blockPrivateNetworks: blockPrivateNetworks))
+        {
+            throw new AgentBrowserNavigationException(
+                safetyReason,
+                new InvalidOperationException(safetyReason));
         }
 
         var handle = GetHandle(sessionId);

@@ -10,6 +10,15 @@ builder.Services.AddAgentBrowserCore();
 builder.Services.AddSingleton<WebSocketHandler>();
 builder.Services.AddSingleton<IBrowserEventSink>(sp => sp.GetRequiredService<WebSocketHandler>());
 
+var corsOrigins = Environment.GetEnvironmentVariable("AGENTBROWSER_CORS_ORIGINS");
+var allowedCorsOrigins = corsOrigins?.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? Array.Empty<string>();
+
+if (allowedCorsOrigins.Length > 0)
+{
+    builder.Services.AddCors();
+}
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -17,7 +26,17 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ApiVersionMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<RequestSizeLimitMiddleware>();
+app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
+
+if (allowedCorsOrigins.Length > 0)
+{
+    app.UseCors(policy => policy.WithOrigins(allowedCorsOrigins).AllowAnyHeader().AllowAnyMethod());
+}
+
 app.UseWebSockets();
 app.UseMiddleware<WebSocketMiddleware>();
 app.MapControllers();

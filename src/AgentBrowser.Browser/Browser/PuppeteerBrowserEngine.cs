@@ -35,6 +35,28 @@ public sealed class PuppeteerBrowserEngine : IBrowserEngine
         return await Puppeteer.LaunchAsync(options).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public Task<string?> ResolveChromiumExecutablePathAsync(CancellationToken cancellationToken = default)
+    {
+        _ = cancellationToken;
+        try
+        {
+            var fetcher = new BrowserFetcher(new BrowserFetcherOptions
+            {
+                Path = BrowserCachePath
+            });
+            var installed = fetcher.GetInstalledBrowsers()
+                .Where(browser => browser.Browser == SupportedBrowser.Chrome)
+                .OrderByDescending(browser => browser.BuildId, StringComparer.Ordinal)
+                .FirstOrDefault();
+            return Task.FromResult(installed?.GetExecutablePath());
+        }
+        catch (Exception)
+        {
+            return Task.FromResult<string?>(null);
+        }
+    }
+
     private static string GetInstalledChromePath(BrowserFetcher fetcher)
     {
         var installed = fetcher.GetInstalledBrowsers()

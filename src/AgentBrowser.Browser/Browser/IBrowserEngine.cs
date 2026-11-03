@@ -11,4 +11,9 @@ public interface IBrowserEngine
     /// Launches a browser instance using the supplied launch options.
     /// </summary>
     Task<IBrowser> LaunchAsync(LaunchOptions options, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the path of the installed Chromium executable, or null when none is available.
+    /// </summary>
+    Task<string?> ResolveChromiumExecutablePathAsync(CancellationToken cancellationToken = default);
 }
