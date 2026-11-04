@@ -1,4 +1,5 @@
 using AgentBrowser.Browser.Browser;
+using AgentBrowser.Shared.Models;
 using AgentBrowser.Shared.Models.Extraction;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -42,6 +43,32 @@ public class ExtractionService
                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
                 Array.Empty<JsonElement>(),
                 Array.Empty<MetaTag>());
+    }
+
+    /// <summary>
+    /// Extracts a basic invoice schema from embedded structured data.
+    /// </summary>
+    public async Task<InvoiceInfo> ExtractInvoiceAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        var metadata = await ExtractMetadataAsync(sessionId, cancellationToken).ConfigureAwait(false);
+        foreach (var item in metadata.JsonLd)
+        {
+            if (!IsInvoiceLike(item))
+            {
+                continue;
+            }
+
+            return new InvoiceInfo(
+                FindString(item, "seller", "provider", "name", "legalName"),
+                FindString(item, "identifier", "invoiceNumber", "invoiceId", "orderNumber"),
+                FindString(item, "datePublished", "orderDate", "invoiceDate", "created"),
+                FindString(item, "paymentDueDate", "dueDate", "validThrough"),
+                FindString(item, "totalPrice", "grandTotal", "total", "amount"),
+                FindString(item, "priceCurrency", "currency", "invoiceCurrency"),
+                "jsonld");
+        }
+
+        return new InvoiceInfo(null, null, null, null, null, null, "none");
     }
 
     /// <summary>
@@ -110,6 +137,75 @@ public class ExtractionService
 
         return Limit(links, max);
     }
+
+    private static bool IsInvoiceLike(JsonElement element)
+    {
+        var type = FindString(element, "@type", "type");
+        return type is not null &&
+            (type.Contains("Invoice", StringComparison.OrdinalIgnoreCase) ||
+             type.Contains("Order", StringComparison.OrdinalIgnoreCase) ||
+             type.Contains("InvoiceOrder", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string? FindString(JsonElement root, params string[] names)
+    {
+        if (root.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array))
+        {
+            return null;
+        }
+
+        foreach (var name in names)
+        {
+            var found = FindProperty(root, name);
+            if (found is { } element)
+            {
+                return JsonElementToString(element);
+            }
+        }
+
+        return null;
+    }
+
+    private static JsonElement? FindProperty(JsonElement element, string name)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (property.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return property.Value;
+                }
+
+                var nested = FindProperty(property.Value, name);
+                if (nested is { } match)
+                {
+                    return match;
+                }
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                var nested = FindProperty(item, name);
+                if (nested is { } match)
+                {
+                    return match;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string? JsonElementToString(JsonElement element) => element.ValueKind switch
+    {
+        JsonValueKind.String => element.GetString(),
+        JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False => element.GetRawText(),
+        JsonValueKind.Object or JsonValueKind.Array => element.GetRawText(),
+        _ => null
+    };
 
     private async Task<string?> GetOriginAsync(string sessionId, CancellationToken cancellationToken)
     {

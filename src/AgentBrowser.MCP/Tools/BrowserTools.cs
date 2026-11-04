@@ -210,6 +210,21 @@ public static class BrowserTools
     }
 
     /// <summary>
+    /// Extracts a basic invoice schema from the page.
+    /// </summary>
+    [McpServerTool(Name = "browse_get_invoice")]
+    [Description("Extract invoice fields from embedded structured data.")]
+    public static async Task<InvoiceInfo> GetInvoice(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var extractionService = services.GetRequiredService<ExtractionService>();
+        return await extractionService.ExtractInvoiceAsync(sessionId, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Extracts prices from the page.
     /// </summary>
     [McpServerTool(Name = "browse_get_prices")]

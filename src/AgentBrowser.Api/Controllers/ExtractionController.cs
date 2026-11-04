@@ -31,6 +31,16 @@ public sealed class ExtractionController : ControllerBase
     }
 
     /// <summary>
+    /// Extracts a basic invoice schema from embedded structured data.
+    /// </summary>
+    [HttpGet("invoice")]
+    public async Task<ActionResult> ExtractInvoice(string sessionId, CancellationToken cancellationToken)
+    {
+        var invoice = await _extractionService.ExtractInvoiceAsync(sessionId, cancellationToken);
+        return Ok(invoice);
+    }
+
+    /// <summary>
     /// Extracts prices from the page.
     /// </summary>
     [HttpGet("prices")]
