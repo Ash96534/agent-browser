@@ -1,4 +1,5 @@
 using AgentBrowser.Api.Middleware;
+using AgentBrowser.Api.Persistence;
 using AgentBrowser.Api.WebSockets;
 using AgentBrowser.Browser.Browser;
 
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddAgentBrowserCore();
+builder.Services.AddSingleton<OperationStore>();
 builder.Services.AddSingleton<WebSocketHandler>();
 builder.Services.AddSingleton<IBrowserEventSink>(sp => sp.GetRequiredService<WebSocketHandler>());
 
@@ -31,6 +33,7 @@ app.UseMiddleware<ApiVersionMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<RequestSizeLimitMiddleware>();
 app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
+app.UseMiddleware<OperationTimingMiddleware>();
 
 if (allowedCorsOrigins.Length > 0)
 {
