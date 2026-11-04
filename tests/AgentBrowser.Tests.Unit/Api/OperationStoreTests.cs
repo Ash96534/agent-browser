@@ -38,7 +38,14 @@ public class OperationStoreTests
             Environment.SetEnvironmentVariable("AGENTBROWSER_SQLITE_PATH", null);
             if (File.Exists(database))
             {
-                File.Delete(database);
+                try
+                {
+                    File.Delete(database);
+                }
+                catch (IOException)
+                {
+                    // SQLite may still be releasing the handle on Windows; the file is ignored by Git.
+                }
             }
         }
     }

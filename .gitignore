@@ -25,6 +25,7 @@ publish/
 task-*.txt
 api-smoke-*.txt
 mcp-*.txt
+operation-store-*.db
 
 # NuGet
 packages/
