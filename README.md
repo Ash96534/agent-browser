@@ -2,7 +2,7 @@
 
 ![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)
 ![PuppeteerSharp 19.0.0](https://img.shields.io/badge/PuppeteerSharp-19.0.0-2671A9?logo=googlechrome)
-![License: Undecided](https://img.shields.io/badge/license-undecided-lightgrey)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Status: MVP](https://img.shields.io/badge/status-MVP-blue)
 
 > A local browser-control service for AI agents, backed by Chromium.
@@ -352,4 +352,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution guide, code style, a
 
 ## License
 
-This project does not yet contain a `LICENSE` file. Do not publish copies or derivative works until a license is selected.
+This project is licensed under the [MIT License](LICENSE).

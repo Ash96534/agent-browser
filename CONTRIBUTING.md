@@ -44,4 +44,4 @@ Open a pull request describing the verified behavior. If this repository has bra
 
 ## License
 
-This project does not yet have a `LICENSE` file. Do not publish copies until a license is selected.
+This project is licensed under the [MIT License](LICENSE).
