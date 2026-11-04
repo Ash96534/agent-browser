@@ -48,6 +48,14 @@
 
 **Current status:** Implemented and verified.
 
+## Session health and restart
+
+**Decision:** Add `GET /session/{id}/health` and `POST /session/{id}/restart`.
+
+**Rationale:** Long-running agents need to know whether Chromium is alive and recycle it when it crashes.
+
+**Current status:** Implemented and verified.
+
 ## Error contracts
 
 **Decision:** `ErrorKind`, `TraceId`, `Error`, `Message`, `Retryable`.

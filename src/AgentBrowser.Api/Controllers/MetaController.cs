@@ -53,29 +53,36 @@ public sealed class MetaController : ControllerBase
                 multiTab = false,
                 networkInterception = false,
                 domMutationEvents = false,
-                persistence = false,
+                persistence = true,
                 streaming = true,
                 apiKeyAuthentication = Environment.GetEnvironmentVariable("AGENTBROWSER_API_KEY") is { Length: > 0 },
                 requestSizeLimit = true,
-                correlationIds = true
+                correlationIds = true,
+                sessionRestart = true,
+                invoiceExtraction = true
             },
             endpoints = new[]
             {
                 "POST /session", "GET /session", "GET /session/{id}", "DELETE /session/{id}",
                 "POST /session/{id}/navigate", "GET /session/{id}/html", "GET /session/{id}/content",
                 "POST /session/{id}/dom/click", "POST /session/{id}/dom/type", "POST /session/{id}/dom/execute",
-                "GET /session/{id}/dom/wait",
+                "GET /session/{id}/dom/wait", "POST /session/{id}/dom/fill",
                 "GET /session/{id}/screenshot", "GET /session/{id}/screenshot/base64",
                 "GET /session/{id}/extract/metadata", "GET /session/{id}/extract/prices",
                 "GET /session/{id}/extract/images", "GET /session/{id}/extract/forms", "GET /session/{id}/extract/links",
-                "GET /diagnostics", "GET /capabilities", "GET /health"
+                "GET /session/{id}/extract/invoice",
+                "GET /session/{id}/console", "GET /session/{id}/errors",
+                "GET /session/{id}/health", "POST /session/{id}/restart",
+                "GET /session/{id}/clickable-elements", "GET /session/{id}/visual-diff",
+                "POST /session/{id}/click-safe",
+                "GET /health", "GET /capabilities", "GET /diagnostics"
             },
             limitations = new[]
             {
                 "One active page per session",
                 "No network interception or request blocking",
                 "No DOM mutation events",
-                "No persistence or multi-instance support yet"
+                "Session state stays in memory"
             }
         });
     }

@@ -31,6 +31,26 @@ public sealed class TelemetryController : ControllerBase
     }
 
     /// <summary>
+    /// Gets the crash or closed state of a session.
+    /// </summary>
+    [HttpGet("health")]
+    public async Task<ActionResult> GetSessionHealth(string sessionId, CancellationToken cancellationToken)
+    {
+        var health = await _browserManager.GetSessionHealthAsync(sessionId, cancellationToken);
+        return Ok(health);
+    }
+
+    /// <summary>
+    /// Recycles a session's browser and page, preserving the session ID and last URL.
+    /// </summary>
+    [HttpPost("restart")]
+    public async Task<ActionResult> RestartSession(string sessionId, CancellationToken cancellationToken)
+    {
+        var restarted = await _browserManager.RestartSessionAsync(sessionId, cancellationToken);
+        return restarted ? Ok(new { restarted = true }) : NotFound(new { restarted = false });
+    }
+
+    /// <summary>
     /// Gets recent page errors.
     /// </summary>
     [HttpGet("errors")]

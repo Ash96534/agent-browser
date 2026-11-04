@@ -170,6 +170,134 @@ public sealed class BrowserManager : IBrowserManager
     }
 
     /// <inheritdoc />
+    public Task<SessionHealthResponse> GetSessionHealthAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        var handle = GetHandle(sessionId);
+        var browserClosed = handle.Browser.IsClosed;
+        var pageClosed = handle.Page.IsClosed;
+        var active = !browserClosed && !pageClosed;
+        var reason = active
+            ? "active"
+            : browserClosed
+                ? "browser-closed"
+                : "page-closed";
+
+        return Task.FromResult(new SessionHealthResponse(active, reason));
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> RestartSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        if (!_sessions.TryRemove(sessionId, out var oldHandle))
+        {
+            return false;
+        }
+
+        var url = oldHandle.Session.Tabs.FirstOrDefault()?.Url;
+
+        if (!oldHandle.Browser.IsClosed)
+        {
+            try
+            {
+                await oldHandle.Browser.CloseAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Ignoring browser close failure during restart of {SessionId}", sessionId);
+            }
+        }
+
+        await oldHandle.DisposeAsync().ConfigureAwait(false);
+
+        IBrowser? newBrowser = null;
+        IPage? newPage = null;
+        try
+        {
+            newBrowser = await _engine.LaunchAsync(new LaunchOptions
+            {
+                Headless = true,
+                Args = Array.Empty<string>()
+            }, cancellationToken).ConfigureAwait(false);
+
+            newPage = await newBrowser.NewPageAsync().ConfigureAwait(false);
+            var viewport = oldHandle.Session.Viewport;
+            await newPage.SetViewportAsync(new ViewPortOptions
+            {
+                Width = viewport.Width,
+                Height = viewport.Height,
+                DeviceScaleFactor = viewport.DeviceScaleFactor,
+                IsMobile = viewport.IsMobile,
+                HasTouch = viewport.HasTouch
+            }).ConfigureAwait(false);
+
+            if (!string.IsNullOrWhiteSpace(oldHandle.Session.UserAgent))
+            {
+                await newPage.SetUserAgentAsync(oldHandle.Session.UserAgent).ConfigureAwait(false);
+            }
+
+            if (!string.IsNullOrWhiteSpace(url) &&
+                Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                SafetyPolicy.IsAllowedNavigation(uri, out _, blockPrivateNetworks: false))
+            {
+                try
+                {
+                    await newPage.GoToAsync(url, new NavigationOptions
+                    {
+                        Timeout = 30000,
+                        WaitUntil = [WaitUntilNavigation.Load]
+                    }).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Restored page opened at about:blank for {SessionId}", sessionId);
+                }
+            }
+
+            var session = oldHandle.Session;
+            session.Status = SessionStatus.Active;
+            session.LastAccessedAt = DateTime.UtcNow;
+            if (session.Tabs.Count > 0)
+            {
+                session.Tabs[0].Status = TabStatus.Loaded;
+            }
+
+            var replacement = new SessionHandle
+            {
+                Session = session,
+                Browser = newBrowser,
+                Page = newPage
+            };
+
+            replacement.ConsoleLogs.AddRange(oldHandle.ConsoleLogs);
+            replacement.PageErrors.AddRange(oldHandle.PageErrors);
+            SubscribeToPageEvents(replacement, newPage, sessionId);
+
+            if (!_sessions.TryAdd(sessionId, replacement))
+            {
+                throw new BrowserLaunchException(
+                    "Failed to restart the session.",
+                    new InvalidOperationException("Session ID collision."));
+            }
+
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            await CloseQuietlyAsync(newBrowser).ConfigureAwait(false);
+            throw;
+        }
+        catch (Exception ex) when (ex is not BrowserException)
+        {
+            await CloseQuietlyAsync(newBrowser).ConfigureAwait(false);
+            throw new BrowserLaunchException(
+                "Failed to restart Chromium. Delete the browser cache and try again.", ex);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<DiagnosticsResponse> GetDiagnosticsAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();

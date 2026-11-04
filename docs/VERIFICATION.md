@@ -21,6 +21,7 @@ Date: 2026-11-04
   - Unit: 49 passed
   - Integration: 27 passed
 - API smoke: health endpoint returned `healthy`; session created; page navigated; extraction succeeded; session closed.
+- Health/restart: `GET /session/{id}/health` and `POST /session/{id}/restart` compile and register; unit and integration suites pass.
 
 ## Notes
 

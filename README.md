@@ -16,6 +16,7 @@ Supported:
 - Viewport, full-page, and element screenshots.
 - Hidden-data extraction: metadata, prices, images, forms, links, invoice fields.
 - Console, page-load, and page-error events.
+- Session health and restart for crashed or closed browsers.
 - Diagnostics, capabilities manifest, request size limits, optional authentication.
 
 Not supported yet:
@@ -89,10 +90,12 @@ Extraction:
 - `GET /session/{id}/extract/links?max=...&sameOrigin=true`
 - `GET /session/{id}/extract/invoice`
 
-Page telemetry:
+Page telemetry and health:
 
 - `GET /session/{id}/console`
 - `GET /session/{id}/errors`
+- `GET /session/{id}/health`
+- `POST /session/{id}/restart`
 
 Advanced:
 
@@ -117,6 +120,8 @@ browse_close_session
 browse_close_all_sessions
 browse_list_sessions
 browse_healthcheck
+browse_get_session_health
+browse_restart_session
 browse_navigate
 browse_click
 browse_type

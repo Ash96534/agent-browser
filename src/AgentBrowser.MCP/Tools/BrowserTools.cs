@@ -341,6 +341,36 @@ public static class BrowserTools
     }
 
     /// <summary>
+    /// Gets the crash or closed state of a session.
+    /// </summary>
+    [McpServerTool(Name = "browse_get_session_health")]
+    [Description("Get whether a session's browser is active or has crashed.")]
+    public static async Task<SessionHealthResponse> GetSessionHealth(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.GetSessionHealthAsync(sessionId, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Recycles a session's browser and page, preserving the session ID and last URL.
+    /// </summary>
+    [McpServerTool(Name = "browse_restart_session")]
+    [Description("Recycle a crashed session while keeping the session ID and last URL when possible.")]
+    public static async Task<bool> RestartSession(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.RestartSessionAsync(sessionId, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Gets recent console logs for a session.
     /// </summary>
     [McpServerTool(Name = "browse_get_console_logs")]

@@ -10,6 +10,7 @@
 - [x] Viewport, full-page, and element screenshots.
 - [x] Hidden data extraction: metadata, prices, images, forms, links, invoice.
 - [x] Browser telemetry: console, load-complete, page-error.
+- [x] Session health and browser recycle endpoint.
 - [x] WebSocket event streaming.
 - [x] MCP stdio server via the official SDK.
 - [x] API diagnostics, capabilities manifest, correlation IDs, request size limits.

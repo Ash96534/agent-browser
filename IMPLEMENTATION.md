@@ -35,6 +35,7 @@ src/
 - Extraction of metadata, prices, images, forms, links, invoice.
 - Clickable elements, label-based form fill, click confirmation.
 - Console log and page error buffering.
+- Session health and browser recycle endpoint.
 - SQLite operation audit log (optional).
 
 ## Tests
@@ -51,6 +52,6 @@ dotnet test AgentBrowser.sln --no-build --nologo
 
 ## Known gaps
 
-- Browser pool and crash recovery.
+- Browser pool and automatic recovery on crash.
 - Production Docker release.
 - License selection.

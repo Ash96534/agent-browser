@@ -50,10 +50,12 @@ AgentBrowser exposes a controlled Chromium page through a REST API, a WebSocket 
 - `GET /session/{sessionId}/extract/links?max=...&sameOrigin=...`
 - `GET /session/{sessionId}/extract/invoice`
 
-### Browser telemetry
+### Browser telemetry and health
 
 - `GET /session/{sessionId}/console`
 - `GET /session/{sessionId}/errors`
+- `GET /session/{sessionId}/health`
+- `POST /session/{sessionId}/restart`
 
 ### Advanced
 
