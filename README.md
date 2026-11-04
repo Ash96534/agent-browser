@@ -1,47 +1,37 @@
 # AgentBrowser
 
-> A local browser-control daemon for AI agents, backed by Chromium and PuppeteerSharp.
+> A local browser-control service for AI agents.
 
-AgentBrowser exposes a controlled Chromium instance to agents through a REST API, a WebSocket event stream, and an MCP server over stdio. It is a single-tab MVP: one Chromium browser per session and one active page per session.
+AgentBrowser gives agents a controlled Chromium instance behind a REST API, a WebSocket event stream, and an MCP stdio server. It is intentionally single-page: one session has one active tab.
 
-## Current status
+## Status
 
-| Area | Status |
-|------|--------|
-| Session lifecycle | Implemented and verified |
-| Navigation and page content | Implemented and verified |
-| DOM click, type, wait, JavaScript | Implemented and verified |
-| Screenshots (viewport, full page, element) | Implemented and verified |
-| Hidden metadata, prices, images, forms, links | Implemented and verified |
-| WebSocket console, load-complete, page-error | Implemented and verified |
-| MCP over stdio | Implemented and verified |
+Tested end-to-end on Windows with .NET 10.
 
-## What is supported
+Supported:
 
-- One Chromium browser per session; exactly one active page per session.
 - Session create, get, list, and close.
-- Navigate, get rendered HTML, and get visible body text.
-- Click, type, execute JavaScript, and wait for a selector.
-- Capture viewport, full-page, or element screenshots as PNG or JPEG.
-- Extract metadata, prices, images, forms, and links.
-- Receive console, page load, and page error events on `/ws/session/{sessionId}`.
-- Control the browser from an MCP client using standard initialize, tools/list, and tools/call.
+- Navigation, rendered HTML, and visible body text or Markdown.
+- Click, type, wait for selector, and JavaScript execution.
+- Viewport, full-page, and element screenshots.
+- Hidden-data extraction: metadata, prices, images, forms, links, invoice fields.
+- Console, page-load, and page-error events.
+- Diagnostics, capabilities manifest, request size limits, optional authentication.
 
-## What is not supported yet
+Not supported yet:
 
-- Multiple tabs per session.
-- Network interception, request modification, mocking, or blocking.
+- Multi-tab sessions.
+- Network interception or request blocking.
 - DOM mutation events.
-- Session persistence, authentication, authorization, or rate limiting.
-- Multi-instance scaling and distributed state.
-- Docker, PDF generation, and image caching beyond PuppeteerSharp.
+- Persistent sessions across process restarts.
+- Multi-instance coordination.
+- Production-hardened Docker or service deployment.
 
 ## Requirements
 
 - .NET 10 SDK 10.0.301 or later.
-- Windows is the verified platform for this branch.
-- Chromium, downloaded automatically on first use.
-- Set `AGENTBROWSER_BROWSER_CACHE` to override the Chromium cache location.
+- Chromium, downloaded on first use.
+- Windows is the verified platform.
 
 ## Quick start
 
@@ -50,84 +40,83 @@ git clone https://github.com/Ash96534/agent-browser.git
 cd agent-browser
 
 dotnet restore AgentBrowser.sln
-dotnet build AgentBrowser.sln --nologo -warnaserror
-dotnet test AgentBrowser.sln --no-build --nologo
-
+dotnet build AgentBrowser.sln -c Release
 dotnet run --project src/AgentBrowser.Api
 ```
 
-The API listens on the URL configured by ASP.NET Core. Health check:
+Health check:
 
 ```bash
 curl http://localhost:5000/health
 ```
 
-## HTTP endpoints
+## HTTP overview
 
-### Sessions
+GET `/health` — health check.
 
-```text
-POST   /session
-GET    /session
-GET    /session/{id}
-DELETE /session/{id}
-```
+Sessions:
 
-### Navigation
+- `POST /session`
+- `GET /session`
+- `GET /session/{id}`
+- `DELETE /session/{id}`
 
-```text
-POST   /session/{sessionId}/navigate
-GET    /session/{sessionId}/html
-GET    /session/{sessionId}/content
-```
+Navigation:
 
-### DOM and JavaScript
+- `POST /session/{id}/navigate`
+- `GET /session/{id}/html`
+- `GET /session/{id}/content?format=text|html|markdown`
 
-```text
-POST   /session/{sessionId}/dom/click
-POST   /session/{sessionId}/dom/type
-POST   /session/{sessionId}/dom/execute
-GET    /session/{sessionId}/dom/wait?selector=...&timeout=30000
-```
+DOM and JavaScript:
 
-### Screenshots
+- `POST /session/{id}/dom/click`
+- `POST /session/{id}/dom/type`
+- `POST /session/{id}/dom/execute`
+- `GET /session/{id}/dom/wait?selector=...`
+- `POST /session/{id}/dom/fill` — fills fields by visible label text
 
-```text
-GET    /session/{sessionId}/screenshot?type=viewport|fullpage|element&format=png|jpeg&quality=80
-GET    /session/{sessionId}/screenshot/base64?type=viewport
-```
+Screenshots:
 
-### Extraction
+- `GET /session/{id}/screenshot?type=viewport|fullpage|element&format=png|jpeg&quality=80&maxBytes=...`
+- `GET /session/{id}/screenshot/base64?format=png&maxBytes=...`
 
-```text
-GET    /session/{sessionId}/extract/metadata
-GET    /session/{sessionId}/extract/prices
-GET    /session/{sessionId}/extract/images
-GET    /session/{sessionId}/extract/forms
-GET    /session/{sessionId}/extract/links
-```
+Extraction:
 
-### Health
+- `GET /session/{id}/extract/metadata`
+- `GET /session/{id}/extract/prices?max=...`
+- `GET /session/{id}/extract/images?max=...`
+- `GET /session/{id}/extract/forms?max=...`
+- `GET /session/{id}/extract/links?max=...&sameOrigin=true`
+- `GET /session/{id}/extract/invoice`
 
-```text
-GET    /health
-```
+Page telemetry:
 
-### WebSocket
+- `GET /session/{id}/console`
+- `GET /session/{id}/errors`
 
-```text
-GET    /ws/session/{sessionId}
-```
+Advanced:
 
-WebSocket messages use a `type` field and a `sessionId`. Supported event types are `console`, `load-complete`, and `error`.
+- `GET /session/{id}/clickable-elements`
+- `GET /session/{id}/visual-diff`
+- `POST /session/{id}/click-safe` — confirm gated; purchase/payment labels are rejected
+
+Meta:
+
+- `GET /capabilities` — API and feature manifest
+- `GET /diagnostics` — uptime, active sessions, Chromium status
+
+WebSocket:
+
+- `/ws/session/{sessionId}` — console, load-complete, and error events
 
 ## MCP tools
-
-The MCP server uses stdio and standard MCP initialize, tools/list, and tools/call.
 
 ```text
 browse_create_session
 browse_close_session
+browse_close_all_sessions
+browse_list_sessions
+browse_healthcheck
 browse_navigate
 browse_click
 browse_type
@@ -139,90 +128,41 @@ browse_get_prices
 browse_get_images
 browse_get_forms
 browse_get_links
+browse_get_invoice
+browse_get_console_logs
+browse_get_page_errors
+browse_clickable_elements
+browse_fill_by_label
+browse_visual_diff
+browse_click_safe
 ```
 
-Run it with:
+MCP logs go to stderr. stdout contains only MCP protocol frames.
 
-```bash
-dotnet run --project src/AgentBrowser.MCP
+## Configuration
+
+- `AGENTBROWSER_API_KEY` — enable API-key authentication.
+- `AGENTBROWSER_ALLOWED_HOSTS` — comma-separated allowlist for navigation.
+- `AGENTBROWSER_BLOCKED_SCHEMES` — comma-separated blocklist. Default `file,chrome,about`.
+- `AGENTBROWSER_BLOCK_PRIVATE_NETWORKS` — `true` to block private IP addresses.
+- `AGENTBROWSER_CORS_ORIGINS` — comma-separated origins. CORS is denied by default.
+- `AGENTBROWSER_MAX_REQUEST_BYTES` — maximum HTTP request size, default 1 MB.
+- `AGENTBROWSER_PERSISTENCE` — set `true` to enable SQLite operation logs.
+- `AGENTBROWSER_SQLITE_PATH` — override the operation database path.
+- `AGENTBROWSER_BROWSER_CACHE` — override the Chromium cache path.
+
+Read [SECURITY.md](SECURITY.md) for the full threat model.
+
+## Packaging
+
+See [packaging/Dockerfile](packaging/Dockerfile), [packaging/agentbrowser.service](packaging/agentbrowser.service), and [packaging/publish.ps1](packaging/publish.ps1).
+
+A PowerShell helper is included at [scripts/agentbrowser.ps1](scripts/agentbrowser.ps1). Example:
+
+```powershell
+pwsh ./scripts/agentbrowser.ps1 -Command session-create
 ```
 
-MCP logs are written to stderr. Stdout contains only MCP protocol frames.
+## Verification
 
-## Architecture
-
-```text
-Agent / application
-        |
-        | HTTP, WebSocket, or MCP
-        v
-ASP.NET Core API / MCP server
-        |
-        | Core services
-        v
-Browser layer
-        |
-        | PuppeteerSharp / CDP
-        v
-Chromium
-```
-
-The layers are:
-
-- `AgentBrowser.Shared`: models, responses, requests, and exceptions.
-- `AgentBrowser.Browser`: Chromium startup and page operations.
-- `AgentBrowser.Core`: service adapters and extraction logic.
-- `AgentBrowser.Api`: REST controllers, middleware, and WebSocket streaming.
-- `AgentBrowser.MCP`: MCP server based on the official C# SDK.
-
-## Project structure
-
-```text
-AgentBrowser.sln
-global.json
-src/
-  AgentBrowser.Api/
-    Controllers/
-    Middleware/
-    WebSockets/
-  AgentBrowser.Browser/
-    Browser/
-  AgentBrowser.Core/
-    Extraction/
-    Services/
-    Extensions/
-  AgentBrowser.MCP/
-    Tools/
-  AgentBrowser.Shared/
-    Exceptions/
-    Models/
-tests/
-  AgentBrowser.Tests.Unit/
-  AgentBrowser.Tests.Integration/
-docs/
-  VERIFICATION.md
-  superpowers/plans/
-```
-
-## Development
-
-```bash
-dotnet build AgentBrowser.sln --nologo -warnaserror
-dotnet test AgentBrowser.sln --no-build --nologo
-dotnet test tests/AgentBrowser.Tests.Integration --no-build --filter "Category=Browser"
-dotnet test tests/AgentBrowser.Tests.Integration --no-build --filter "Category=Mcp"
-```
-
-Browser tests use local `data:` URLs and do not access the public network. They do need a downloaded Chromium binary; PuppeteerSharp downloads it on first use.
-
-## Documentation
-
-- [SPEC.md](SPEC.md): current supported specification and known limitations.
-- [IMPLEMENTATION.md](IMPLEMENTATION.md): implementation map and verification status.
-- [ROADMAP.md](ROADMAP.md): current and planned work.
-- [DECISIONS.md](DECISIONS.md): architecture decisions.
-- [docs/VERIFICATION.md](docs/VERIFICATION.md): recorded verification runs.
-
-## License
-
-License: undecided. This repository does not currently contain a `LICENSE` file.
+Recorded runs are in [docs/VERIFICATION.md](docs/VERIFICATION.md).

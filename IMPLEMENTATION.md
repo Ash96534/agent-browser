@@ -1,59 +1,8 @@
 # AgentBrowser Implementation Map
 
-> This document describes what is implemented and verified, not aspirational work.
+> Describes what is implemented and verified, not aspirations.
 
 See [docs/VERIFICATION.md](docs/VERIFICATION.md) for the latest recorded verification run.
-
-## Current implementation
-
-### Session lifecycle
-
-- `PuppeteerBrowserEngine` downloads and launches Chromium.
-- `BrowserManager` owns the browser and page for each session.
-- One active page per session; session IDs and tab IDs are independent.
-- Session create, get, list, and close are implemented.
-- Browser and page objects are closed on session close and on shutdown.
-
-### Navigation and content
-
-- Navigation with `NavigationOptions`.
-- HTML retrieval.
-- Body text retrieval.
-- Tab URL, title, and status are updated after navigation.
-- Navigation failures are mapped to `NavigationException`.
-
-### DOM and JavaScript
-
-- Click, type, wait for selector, and JavaScript evaluation.
-- Selector failures are mapped to `SelectorException`.
-- Script failures are mapped to `ScriptExecutionException`.
-
-### Screenshots
-
-- Viewport, full-page, and element screenshots.
-- PNG, JPEG, and WebP.
-- Base64 responses from the API and MCP.
-
-### Extraction
-
-- Metadata: meta tags, Open Graph, Twitter card, canonical URL, JSON-LD.
-- Prices: `data-price`, `itemprop="price"`, and visible currency patterns.
-- Images: src, alt, title, dimensions, captions, parent context.
-- Forms: action, method, fields, labels, required attributes.
-- Links: absolute href, text, title, rel, target.
-
-### WebSocket events
-
-- `/ws/session/{sessionId}`.
-- Supported: `console`, `load-complete`, `error`.
-- Not implemented: DOM mutation and network interception.
-
-### MCP
-
-- Official `ModelContextProtocol` C# SDK.
-- Standard `initialize`, `tools/list`, and `tools/call`.
-- Logs to stderr; stdout contains protocol frames only.
-- 13 tools listed in README and SPEC.
 
 ## Source layout
 
@@ -61,32 +10,47 @@ See [docs/VERIFICATION.md](docs/VERIFICATION.md) for the latest recorded verific
 src/
   AgentBrowser.Api/
     Controllers/       HTTP endpoints
-    Middleware/        ExceptionHandlingMiddleware, WebSocketMiddleware
-    WebSockets/        WebSocket connection and payload handling
+    Middleware/        Exception handling, correlation, auth, size cap, API version
+    Persistence/       Optional SQLite operation audit log
+    WebSockets/        Connection and event forwarding
   AgentBrowser.Browser/
-    Browser/           BrowserManager, engine seam, browser events
+    Browser/           BrowserManager, engine seam, page operations
   AgentBrowser.Core/
-    Extraction/        ExtractionService and extraction scripts
+    Extraction/        Scripts and typed extraction service
     Services/          Service adapters
-    Extensions/        Dependency injection
+    Extensions/        DI registration
   AgentBrowser.MCP/
     Tools/             MCP tools
   AgentBrowser.Shared/
-    Exceptions/        Browser/session/navigation/selector/script errors
-    Models/            Models, requests, responses, extraction records
+    Exceptions/        Error hierarchy
+    Models/            Requests, responses, models, extraction records
 ```
 
-## Test coverage
+## What is implemented
 
-- Unit tests: model, browser manager, services, API controllers, MCP tools, WebSocket payloads.
-- Integration tests: API endpoints with a fake browser, real browser extraction tests with local `data:` URLs, WebSocket endpoint, MCP stdio protocol.
-- Browser tests are marked `Category=Browser`.
-- MCP process test is marked `Category=Mcp`.
+- Browser lifecycle: create, get, list, close.
+- Navigation, rendered HTML, body text, and Markdown.
+- Click, type, wait, JavaScript execution.
+- Screenshots with format, quality, and byte limits.
+- Extraction of metadata, prices, images, forms, links, invoice.
+- Clickable elements, label-based form fill, click confirmation.
+- Console log and page error buffering.
+- SQLite operation audit log (optional).
 
-## Open items
+## Tests
 
-- Multiple tabs per session.
-- Network interception, request modification, mocking, and blocking.
-- DOM mutation events.
-- Session persistence, authentication, authorization, and rate limiting.
-- Docker, PDF, and a license file.
+- Unit tests: models, safety policy, services, controllers, MCP tools, telemetry payloads, operation store.
+- Integration tests: API contract with faked browser manager, real browser extraction via local data URLs, WebSocket ping/pong, MCP stdio JSON-RPC.
+
+## Known good commands
+
+```bash
+dotnet build AgentBrowser.sln --nologo -warnaserror
+dotnet test AgentBrowser.sln --no-build --nologo
+```
+
+## Known gaps
+
+- Browser pool and crash recovery.
+- Production Docker release.
+- License selection.

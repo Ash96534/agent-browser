@@ -1,192 +1,102 @@
 # Architecture Decisions
 
-## Language and framework
+> This file records decisions that have been made and tested. Unanswered items are open, not done.
 
-**Decision:** C# 13 on .NET 10 (`net10.0`) with PuppeteerSharp.
+## Language and runtime
 
-**Rationale:**
-- Native async and strong typing.
-- PuppeteerSharp 19.0.0 is pinned and is the supported browser integration.
-- Current APIs are standard ASP.NET Core and .NET dependency injection.
-- The project is developed and verified on Windows.
+**Decision:** C# 13 on .NET 10 (`net10.0`).
 
-**Current status:** Verified.
-
----
+**Rationale:** Native async, strong typing, PuppeteerSharp 19.0.0 pinned.
 
 ## Browser engine
 
-**Decision:** Chromium through PuppeteerSharp CDP.
+**Decision:** Chromium via PuppeteerSharp.
 
-**Rationale:**
-- Standards-compliant rendering.
-- Mature CDP access for navigation, DOM, screenshots, and JavaScript.
-- Headless and headed modes are supported through `SessionOptions.Headless`.
+**Rationale:** Full CDP coverage, stable Windows support, good for deterministic extraction tests.
 
-**Alternatives considered:**
-- CEF: more complex setup.
-- WebView2: Windows-only and not browser-automation oriented.
-- Playwright: not chosen for this iteration.
-
-**Implementation:**
-- One Chromium browser per session.
-- One active page per session.
-- Browser and page references are owned by `BrowserManager` and closed on session close.
-
-**Current status:** Verified.
-
----
+**Current status:** Implemented and verified.
 
 ## Browser cache
 
-**Decision:** Download Chromium on first use into a cache directory.
+**Decision:** Chromium downloads to a cache directory, overridable with `AGENTBROWSER_BROWSER_CACHE`.
 
-**Rationale:** The repository should not commit Chromium binaries.
+**Rationale:** No secrets or binaries committed to the repository.
 
-**Implementation:**
-- Default cache path is `.agentbrowser-cache` under the host application's output directory (`AppContext.BaseDirectory`).
-- Set `AGENTBROWSER_BROWSER_CACHE` to override it.
-- Concurrent downloads are guarded by a shared semaphore.
-- The installed Chrome executable path is passed explicitly to PuppeteerSharp.
-
-**Current status:** Verified.
-
----
+**Current status:** Implemented.
 
 ## API architecture
 
-**Decision:** REST API for commands and WebSocket for events.
+**Decision:** REST for commands, WebSocket for events.
 
-**Rationale:**
-- REST is easy to call and debug.
-- WebSocket is appropriate for console, load, and page-error events.
-- Language-agnostic for agents.
+**Rationale:** Language-agnostic and easy to debug.
 
-**Current status:** Verified for REST. WebSocket supports `console`, `load-complete`, and `error` only.
-
----
+**Current status:** Implemented and verified.
 
 ## MCP server
 
-**Decision:** Use the official `ModelContextProtocol` C# SDK.
+**Decision:** Official `ModelContextProtocol` C# SDK, stdio transport.
 
-**Rationale:**
-- Standard initialize, tools/list, and tools/call handshake.
-- Avoids a fragile hand-rolled protocol implementation.
-- Tool discovery can be tested locally.
+**Rationale:** Standard initialize/tools/list/tools/call handshake; logs go to stderr.
 
-**Implementation:**
-- stdio transport.
-- Logs to stderr; stdout contains protocol frames only.
-- Tools live in `src/AgentBrowser.MCP/Tools/BrowserTools.cs`.
-
-**Current status:** Verified.
-
----
+**Current status:** Implemented and verified.
 
 ## Session management
 
-**Decision:** In-memory sessions only.
+**Decision:** One active page per session, in memory only.
 
-**Rationale:**
-- Simplest correct MVP.
-- Avoids half-implemented persistence.
-- Session IDs are unique per process.
+**Rationale:** Simple, safe MVP scope.
 
-**Consequences:**
-- No session survives restart.
-- No multi-instance coordination.
-- No SQLite or distributed store.
+**Current status:** Implemented and verified.
 
-**Current status:** Verified.
+## Error contracts
 
----
+**Decision:** `ErrorKind`, `TraceId`, `Error`, `Message`, `Retryable`.
 
-## Single-tab scope
+**Current status:** Implemented; responses use consistent shape across API and MCP.
 
-**Decision:** One active page per session.
+## Persistence
 
-**Rationale:** Multi-tab behavior is not required for the MVP and is not assumed by extraction, screenshots, or JavaScript execution.
+**Decision:** Optional SQLite operation audit log, off by default.
 
-**Consequences:** Multi-tab support requires explicit design and is not claimed.
+**Rationale:** Some consumers want an audit trail; most do not. Payloads are never persisted.
 
-**Current status:** Verified.
+**Implementation:** Set `AGENTBROWSER_PERSISTENCE=true` and optionally `AGENTBROWSER_SQLITE_PATH`.
 
----
+## Safety policy
 
-## Data extraction
+**Decision:**
 
-**Decision:** Extract hidden data with page-side JavaScript.
+- `file:`, `chrome:` and `about:` URLs are blocked by default.
+- Allowlist navigation with `AGENTBROWSER_ALLOWED_HOSTS`.
+- Block private networks with `AGENTBROWSER_BLOCK_PRIVATE_NETWORKS=true`.
 
-**Rationale:**
-- Hidden data lives in meta tags, Open Graph, JSON-LD, `data-*`, and `itemprop` attributes.
-- JavaScript can normalize values before serialization.
-- Extraction is typed and testable.
+**Implementation status:** Implemented.
 
-**Current status:** Verified for metadata, prices, images, forms, and links.
+## Authentication
 
----
+**Decision:** Optional API key. CORS denied by default.
 
-## Error handling
+**Implementation status:** Implemented via `AGENTBROWSER_API_KEY` and `AGENTBROWSER_CORS_ORIGINS`.
 
-**Decision:** Custom exception hierarchy and a single middleware mapping exceptions to HTTP responses.
+## Rate limits
 
-**Rationale:**
-- Predictable 400/404/500/503 responses.
-- No stack traces in production error responses.
-- Controllers should not contain error-handling boilerplate.
+**Decision:** HTTP request size limit, no per-IP rate limiting yet.
 
-**Hierarchy:**
-- `SessionNotFoundException` → 404
-- `NavigationException`, `SelectorException`, `ScriptExecutionException`, `ArgumentException` → 400
-- `BrowserLaunchException` → 503
+## API versioning
 
-**Current status:** Verified.
+**Decision:** `X-Api-Version: 1.0.0`, `schemaVersion: 1.0` in capabilities.
 
----
+## Access control
 
-## Dependency injection
+**Decision:** None beyond API key. No roles or teams.
 
-**Decision:** Microsoft.Extensions.DependencyInjection.
+## Packaging
 
-**Rationale:** Standard for ASP.NET Core and compatible with the MCP host.
+**Decision:** Dockerfile, systemd unit, and PowerShell publish script included. No official package manager release yet.
 
-**Current status:** Verified.
+## Open decisions
 
----
-
-## Project structure
-
-**Decision:** Layered projects with one direction of dependencies.
-
-```text
-Shared -> Browser -> Core -> Api / MCP
-```
-
-**Current status:** Verified.
-
----
-
-## License
-
-**Decision:** Undecided.
-
-**Rationale:** This repository does not contain a `LICENSE` file and no copyright holder has been selected.
-
-**Consequences:** Documentation must not claim an MIT or other license.
-
----
-
-## Archived decisions
-
-### Python vs C#
-
-- Python was rejected for the initial implementation because of performance and deployment trade-offs.
-
-### FastAPI vs ASP.NET Core
-
-- ASP.NET Core was selected.
-
-### PuppeteerSharp vs Playwright
-
-- PuppeteerSharp is used. Playwright is not integrated.
+- Browser pool and crash recovery.
+- License selection.
+- Multi-tab support.
+- Network interception.

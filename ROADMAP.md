@@ -1,52 +1,34 @@
 # AgentBrowser Roadmap
 
-> Status reflects the latest verified branch, not the original ambition.
+> Reflects the latest verified branch. This is not an aspirational wishlist.
 
-## Current: Working MVP
+## Done
 
-### Implemented and verified
+- [x] Chromium session lifecycle without multi-tab support.
+- [x] Navigation, rendered HTML, body text, and Markdown.
+- [x] Click, type, wait for selector, JavaScript execution.
+- [x] Viewport, full-page, and element screenshots.
+- [x] Hidden data extraction: metadata, prices, images, forms, links, invoice.
+- [x] Browser telemetry: console, load-complete, page-error.
+- [x] WebSocket event streaming.
+- [x] MCP stdio server via the official SDK.
+- [x] API diagnostics, capabilities manifest, correlation IDs, request size limits.
+- [x] Optional API-key authentication and CORS allowlist.
+- [x] Host/scheme safety policy for navigation.
+- [x] Optional SQLite operation audit log.
+- [x] Security, contributing, and packaging files.
 
-- [x] Chromium session lifecycle
-- [x] Single-tab navigation, HTML, and body text
-- [x] Click, type, wait, and JavaScript execution
-- [x] Viewport, full-page, and element screenshots
-- [x] Extraction of metadata, prices, images, forms, and links
-- [x] WebSocket console, load-complete, and page-error events
-- [x] REST API with consistent error mapping
-- [x] MCP server over stdio using the official C# SDK
-- [x] Unit and integration test coverage
+## Not started / intentionally deferred
 
-### Explicitly out of scope for the MVP
+- [ ] Network interception, request modification, or blocking.
+- [ ] Multi-tab support.
+- [ ] DOM mutation events.
+- [ ] Production Docker release.
+- [ ] Multi-instance coordination.
+- [ ] License selection.
 
-- [ ] Multi-tab support
-- [ ] Network interception, request modification, mocking, or blocking
-- [ ] DOM mutation events
-- [ ] Session persistence
-- [ ] API authentication, authorization, and rate limiting
-- [ ] Multi-instance scaling
-- [ ] Docker and PDF generation
-- [ ] License selection
+## Next
 
-## Next priorities
-
-1. GitHub Actions CI for Windows: build, unit tests, integration tests, browser tests, and MCP test.
-2. Open source readiness: choose a license and make public claims consistent.
-2. Observability: structured logging, request logging, and a resource monitoring endpoint.
-3. Safety: CORS policy, input limits, request size limits, and defensive error responses.
-4. Testing: browser-backed end-to-end tests for API, WebSocket, and MCP tools.
-5. Performance: benchmark navigation and extraction before making performance claims.
-6. Docker: reproducible image with the verified Chromium cache path.
-
-## Backlog
-
-- Multi-tab support.
-- Network interception and blocking.
-- DOM mutation events.
-- Session persistence with SQLite.
-- API keys and rate limiting.
-- OpenAPI documentation and examples.
-- Local browser cache eviction and monitoring.
-
-## Notes
-
-The original plan described a broader vision. That vision is not implemented, and this roadmap is not a commitment to build it in any particular order.
+1. Browser pool and crash recovery.
+2. Structured output schema for every endpoint and MCP tool.
+3. Contract tests for the documented routes and MCP tools.

@@ -43,6 +43,21 @@ if (allowedCorsOrigins.Length > 0)
 app.UseWebSockets();
 app.UseMiddleware<WebSocketMiddleware>();
 app.MapControllers();
+app.MapGet("/docs", () => Results.Content("""
+    <!doctype html>
+    <html>
+      <head><title>AgentBrowser API Documentation</title></head>
+      <body>
+        <h1>AgentBrowser API</h1>
+        <ul>
+          <li><a href="/capabilities">Capabilities</a></li>
+          <li><a href="/diagnostics">Diagnostics</a></li>
+          <li><a href="/health">Health</a></li>
+        </ul>
+        <p>See README.md and SPEC.md in the repository for request and response schemas.</p>
+      </body>
+    </html>
+    """, "text/html; charset=utf-8"));
 
 app.Run();
 

@@ -1,0 +1,21 @@
+[Unit]
+Description=AgentBrowser API
+After=network.target
+
+[Service]
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+Environment=AGENTBROWSER_API_KEY=replace-me
+Environment=AGENTBROWSER_ALLOWED_HOSTS=*.example.com
+Environment=AGENTBROWSER_BLOCK_PRIVATE_NETWORKS=true
+ExecStart=/opt/agentbrowser/AgentBrowser.Api
+Restart=always
+RestartSec=5
+User=agentbrowser
+Group=agentbrowser
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

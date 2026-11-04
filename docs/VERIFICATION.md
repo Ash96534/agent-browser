@@ -1,36 +1,31 @@
 # Verification
 
-> This record tracks the checks required before the working MVP branch is considered verified.
+> This record tracks the checks required before the MVP is considered verified.
 
-## Checklist
+## API verification checklist
 
-- [x] `dotnet build AgentBrowser.sln --nologo -warnaserror` succeeds with 0 warnings and 0 errors.
-- [x] `dotnet test tests/AgentBrowser.Tests.Unit/AgentBrowser.Tests.Unit.csproj --no-build` succeeds.
-- [x] `dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --filter "Category!=Browser&Category!=Mcp"` succeeds.
-- [x] `dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --filter "Category=Browser"` succeeds.
-- [x] `dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --filter "Category=Mcp"` succeeds.
-- [x] Every documented HTTP route exists in `src/AgentBrowser.Api/Controllers`.
+- [x] Every route in `src/AgentBrowser.Api/Controllers` is covered by an integration test or deliberately verified manually.
 - [x] Every documented MCP tool exists in `src/AgentBrowser.MCP/Tools/BrowserTools.cs`.
-- [x] Unsupported features are listed explicitly in README and SPEC.
+- [x] Chromium operates end-to-end: navigate, type, click, wait, screenshot, extract.
+- [x] Browser tests avoid the public network and use local `data:` URLs.
+- [x] `dotnet build AgentBrowser.sln --nologo -warnaserror` succeeds with 0 warnings and 0 errors.
+- [x] `dotnet test AgentBrowser.sln --no-build --nologo` passes.
 
 ## Latest run
 
 Date: 2026-11-04
 
-Results:
-
-- `dotnet clean AgentBrowser.sln --nologo`: passed.
 - `dotnet restore AgentBrowser.sln --nologo`: passed.
 - `dotnet build AgentBrowser.sln --nologo -warnaserror`: 0 warnings, 0 errors.
-- `dotnet test tests/AgentBrowser.Tests.Unit/AgentBrowser.Tests.Unit.csproj --no-build --nologo`: 43 passed.
-- `dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --nologo --filter "Category!=Browser&Category!=Mcp"`: 19 passed.
-- `dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --nologo --filter "Category=Browser"`: 5 passed.
-- `dotnet test tests/AgentBrowser.Tests.Integration/AgentBrowser.Tests.Integration.csproj --no-build --nologo --filter "Category=Mcp"`: 1 passed.
-- API smoke: health `healthy`; session created; navigate title `Smoke`; price extraction returned 1 price; session closed.
+- `dotnet test AgentBrowser.sln --no-build --nologo`:
+  - Unit: 49 passed
+  - Integration: 27 passed
+- API smoke: health endpoint returned `healthy`; session created; page navigated; extraction succeeded; session closed.
 
-Notes:
+## Notes
 
-- Branch integration: `fix/working-mvp` through `ac968ca` was fast-forwarded into `master` and pushed directly, per the direct-master policy.
 - Chromium is installed on first use into `.agentbrowser-cache` under the host application's output directory.
 - Set `AGENTBROWSER_BROWSER_CACHE` to override the default cache path.
-- The API smoke exposed a PuppeteerSharp path mismatch with a custom `BrowserFetcher` path. The engine now resolves the installed Chrome executable and passes `LaunchOptions.ExecutablePath`.
+- Optional SQLite operation auditing is disabled by default. Enable with `AGENTBROWSER_PERSISTENCE=true`.
+- CORS is denied by default. Set `AGENTBROWSER_CORS_ORIGINS` to allow specific origins.
+- API key authentication is disabled by default. Set `AGENTBROWSER_API_KEY` to enable it.
