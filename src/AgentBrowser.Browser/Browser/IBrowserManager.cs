@@ -39,6 +39,26 @@ public interface IBrowserManager : IAsyncDisposable
     Task<IReadOnlyList<PageErrorEntry>> GetPageErrorsAsync(string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets visible, actionable elements on the current page.
+    /// </summary>
+    Task<IReadOnlyList<ClickableElement>> GetClickableElementsAsync(string sessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Fills form fields by visible label text.
+    /// </summary>
+    Task<FillResult> FillByLabelsAsync(string sessionId, IReadOnlyDictionary<string, string> fields, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Compares the current viewport screenshot to the previous one.
+    /// </summary>
+    Task<VisualDiffResult> GetVisualDiffAsync(string sessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Clicks an element only when confirmation is explicitly enabled.
+    /// </summary>
+    Task<bool> ClickSafeAsync(string sessionId, string selector, bool confirm, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Closes a session and its browser if it exists.
     /// </summary>
     Task<bool> CloseSessionAsync(string sessionId);

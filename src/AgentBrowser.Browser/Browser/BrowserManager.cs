@@ -28,6 +28,7 @@ public sealed class BrowserManager : IBrowserManager
         public SemaphoreSlim Gate { get; } = new(1, 1);
         public List<ConsoleLogEntry> ConsoleLogs { get; } = new();
         public List<PageErrorEntry> PageErrors { get; } = new();
+        public byte[]? LastScreenshot { get; set; }
 
         public ValueTask DisposeAsync()
         {
@@ -184,6 +185,135 @@ public sealed class BrowserManager : IBrowserManager
             ChromiumExecutablePath = path,
             IsChromiumAvailable = !string.IsNullOrWhiteSpace(path) && File.Exists(path)
         };
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ClickableElement>> GetClickableElementsAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await handle.Page.EvaluateFunctionAsync<ClickableElement[]>(ClickableElementsScript)
+                .ConfigureAwait(false) ?? Array.Empty<ClickableElement>();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new AgentBrowserScriptExecutionException(
+                $"Extracting clickable elements failed: {ex.Message}", ex);
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<FillResult> FillByLabelsAsync(string sessionId, IReadOnlyDictionary<string, string> fields, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(fields);
+        if (fields.Count == 0)
+        {
+            return new FillResult(0, Array.Empty<string>());
+        }
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                return await handle.Page.EvaluateFunctionAsync<FillResult>(FillByLabelScript, fields)
+                    .ConfigureAwait(false)
+                    ?? new FillResult(0, Array.Empty<string>());
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new AgentBrowserScriptExecutionException(
+                    $"Filling fields by label failed: {ex.Message}", ex);
+            }
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<VisualDiffResult> GetVisualDiffAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        byte[]? previous;
+        try
+        {
+            previous = handle.LastScreenshot;
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+
+        var current = await ScreenshotAsync(sessionId,
+            new AgentBrowser.Shared.Models.ScreenshotOptions
+            {
+                Type = AgentBrowserScreenshotType.Viewport,
+                Format = "png"
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        var identical = previous is not null && previous.LongLength == current.LongLength && previous.AsSpan().SequenceEqual(current);
+        return new VisualDiffResult(identical, previous?.Length, current.Length,
+            handle.Page.Url, previous is not null);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> ClickSafeAsync(string sessionId, string selector, bool confirm, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(selector);
+        if (!confirm)
+        {
+            throw new ArgumentException("ClickSafeAsync requires confirm=true. Order, payment, and purchase actions must never run implicitly.");
+        }
+
+        var handle = GetHandle(sessionId);
+        await handle.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var element = await handle.Page.QuerySelectorAsync(selector).ConfigureAwait(false);
+            if (element is null)
+            {
+                throw new AgentBrowserSelectorException(
+                    $"No element matches '{selector}'.",
+                    new ArgumentException("Selector not found.", nameof(selector)));
+            }
+
+            var text = await element.EvaluateFunctionAsync<string>(
+                "el => String(el.textContent || el.placeholder || el.getAttribute('aria-label') || '').toLowerCase()")
+                .ConfigureAwait(false);
+            var dangerous = new[] { "pay", "purchase", "checkout", "buy", "order", "place order", "wire", "transfer", "paypal", "credit" };
+            if (dangerous.Any(word => text?.Contains(word, StringComparison.OrdinalIgnoreCase) == true))
+            {
+                throw new ArgumentException(
+                    "Element appears to be a purchase or payment action and cannot be clicked by ClickSafeAsync.",
+                    nameof(selector));
+            }
+        }
+        finally
+        {
+            handle.Gate.Release();
+        }
+
+        await ClickAsync(sessionId, selector, new ClickOptions(), cancellationToken).ConfigureAwait(false);
+        return true;
     }
 
     /// <inheritdoc />
@@ -433,6 +563,7 @@ public sealed class BrowserManager : IBrowserManager
                         Quality = format == PuppeteerSharp.ScreenshotType.Png ? null : options.Quality
                     }).ConfigureAwait(false);
                     EnsureScreenshotSize(elementBytes, options);
+                    handle.LastScreenshot = elementBytes;
                     return elementBytes;
                 }
 
@@ -443,6 +574,7 @@ public sealed class BrowserManager : IBrowserManager
                     Quality = format == PuppeteerSharp.ScreenshotType.Png ? null : options.Quality
                 }).ConfigureAwait(false);
                 EnsureScreenshotSize(pageBytes, options);
+                handle.LastScreenshot = pageBytes;
                 return pageBytes;
             }
             catch (OperationCanceledException)
@@ -715,6 +847,70 @@ public sealed class BrowserManager : IBrowserManager
             }
             return chunks.join('\n\n');
         })()
+        """;
+
+    private const string ClickableElementsScript = """
+        () => {
+            const visible = el => {
+                const rect = el.getBoundingClientRect();
+                const style = getComputedStyle(el);
+                return rect.width > 0 && rect.height > 0 &&
+                    style.visibility !== 'hidden' && style.display !== 'none';
+            };
+            const selectorOf = el => {
+                if (el.id) return `#${CSS.escape(el.id)}`;
+                const parts = [];
+                for (let node = el; node && node !== document.body; node = node.parentElement) {
+                    let selector = node.tagName.toLowerCase();
+                    if (node.id) {
+                        parts.unshift(`#${CSS.escape(node.id)}`);
+                        break;
+                    }
+                    const classes = [...node.classList].map(c => `.${CSS.escape(c)}`).join('');
+                    if (classes) selector += classes;
+                    const siblings = [...node.parentElement.children].filter(x => x.tagName === node.tagName);
+                    const index = siblings.indexOf(node) + 1;
+                    selector += `:nth-of-type(${index})`;
+                    parts.unshift(selector);
+                }
+                return parts.join(' > ');
+            };
+            return [...document.querySelectorAll('a, button, input, select, textarea, [role="button"], [tabindex]')]
+                .filter(visible)
+                .slice(0, 100)
+                .map((el, index) => ({
+                    index,
+                    tag: el.tagName.toLowerCase(),
+                    type: (el.getAttribute('type') || '').toLowerCase(),
+                    role: el.getAttribute('role') || '',
+                    text: (el.textContent || el.placeholder || el.getAttribute('aria-label') || '').trim(),
+                    selector: selectorOf(el),
+                    url: el.href || ''
+                }));
+        }
+        """;
+
+    private const string FillByLabelScript = """
+        fields => {
+            const results = [];
+            for (const [labelText, value] of Object.entries(fields || {})) {
+                const needle = String(labelText).toLowerCase();
+                const label = [...document.querySelectorAll('label')]
+                    .find(l => l.textContent.trim().toLowerCase().includes(needle));
+                if (!label) continue;
+
+                const control = label.control ||
+                    (label.getAttribute('for') ? document.getElementById(label.getAttribute('for')) : null) ||
+                    label.querySelector('input, select, textarea');
+
+                if (!control) continue;
+                control.value = String(value);
+                control.dispatchEvent(new Event('input', { bubbles: true }));
+                control.dispatchEvent(new Event('change', { bubbles: true }));
+                results.push(control.name || labelText);
+            }
+            return { filled: results.length, fields: results };
+        }
         """;
 
     private static async Task<string> GetBodyTextAsync(SessionHandle handle)

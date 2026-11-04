@@ -353,6 +353,65 @@ public static class BrowserTools
         return await browserManager.GetPageErrorsAsync(sessionId, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Lists visible, actionable elements on the page.
+    /// </summary>
+    [McpServerTool(Name = "browse_clickable_elements")]
+    [Description("List visible, actionable elements on the page.")]
+    public static async Task<IReadOnlyList<ClickableElement>> ClickableElements(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.GetClickableElementsAsync(sessionId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Fills fields by visible label text.
+    /// </summary>
+    [McpServerTool(Name = "browse_fill_by_label")]
+    [Description("Fill form fields by matching visible label text.")]
+    public static async Task<FillResult> FillByLabel(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        [Description("Mapping of label text to value, e.g. { Name: \"Ash\" }.")] Dictionary<string, string> fields,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.FillByLabelsAsync(sessionId, fields, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Compares the current viewport screenshot to the previous screenshot.
+    /// </summary>
+    [McpServerTool(Name = "browse_visual_diff")]
+    [Description("Compare the current viewport screenshot to the previous screenshot.")]
+    public static async Task<VisualDiffResult> VisualDiff(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.GetVisualDiffAsync(sessionId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Clicks an element only when confirmation is explicitly set.
+    /// </summary>
+    [McpServerTool(Name = "browse_click_safe")]
+    [Description("Click an element only with confirm=true; payment and purchase labels are blocked.")]
+    public static async Task<bool> ClickSafe(
+        IServiceProvider services,
+        [Description("The session ID returned by browse_create_session.")] string sessionId,
+        [Description("CSS selector.")] string selector,
+        [Description("Must be true.")] bool confirm = false,
+        CancellationToken cancellationToken = default)
+    {
+        var browserManager = services.GetRequiredService<IBrowserManager>();
+        return await browserManager.ClickSafeAsync(sessionId, selector, confirm, cancellationToken).ConfigureAwait(false);
+    }
+
     private static WaitUntil? ParseWaitUntil(string? waitUntil)
     {
         if (string.IsNullOrWhiteSpace(waitUntil))
